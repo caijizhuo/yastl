@@ -9,47 +9,40 @@
 #include "type_traits.h"
 #include "util.h"
 
-namespace yastl
-{
+namespace yastl {
 
 /*****************************************************************************************/
 // uninitialized_copy
 // 把 [first, last) 上的内容复制到以 result 为起始处的空间，返回复制结束的位置
 /*****************************************************************************************/
+// 会调用拷贝构造
 template <class InputIter, class ForwardIter>
-ForwardIter 
-unchecked_uninit_copy(InputIter first, InputIter last, ForwardIter result, std::true_type)
-{
+ForwardIter unchecked_uninit_copy(InputIter first, InputIter last, ForwardIter result, std::true_type) {
   return yastl::copy(first, last, result);
 }
 
 template <class InputIter, class ForwardIter>
-ForwardIter
-unchecked_uninit_copy(InputIter first, InputIter last, ForwardIter result, std::false_type)
-{
+ForwardIter unchecked_uninit_copy(InputIter first, InputIter last, ForwardIter result, std::false_type) {
   auto cur = result;
-  try
-  {
-    for (; first != last; ++first, ++cur)
-    {
+  try {
+    for (; first != last; ++first, ++cur) {
       yastl::construct(&*cur, *first);
     }
   }
-  catch (...)
-  {
-    for (; result != cur; --cur)
+  catch (...) { // 有异常就全部释放
+    for (; result != cur; --cur) {
       yastl::destroy(&*cur);
+    }
   }
-  return cur;
+  return cur; // 返回尾部
 }
 
+// 泛型总入口,要求此函数要么构造所有，要么一个都不构造
 template <class InputIter, class ForwardIter>
-ForwardIter uninitialized_copy(InputIter first, InputIter last, ForwardIter result)
-{
+ForwardIter uninitialized_copy(InputIter first, InputIter last, ForwardIter result) {
   return yastl::unchecked_uninit_copy(first, last, result, 
                                      std::is_trivially_copy_assignable<
-                                     typename iterator_traits<ForwardIter>::
-                                     value_type>{});
+                                     typename iterator_traits<ForwardIter>::value_type>{});
 }
 
 /*****************************************************************************************/

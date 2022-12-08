@@ -13,96 +13,93 @@ template <class T>
 class allocator
 {
 public:
-  typedef T            value_type;
-  typedef T*           pointer;
-  typedef const T*     const_pointer;
-  typedef T&           reference;
-  typedef const T&     const_reference;
-  typedef size_t       size_type;
-  typedef ptrdiff_t    difference_type;
+  typedef T value_type;
+  typedef T* pointer;
+  typedef const T* const_pointer;
+  typedef T& reference;
+  typedef const T& const_reference;
+  typedef size_t size_type;
+  typedef ptrdiff_t difference_type;
 
 public:
-  static T*   allocate();
-  static T*   allocate(size_type n);
+  static T* allocate(); // 分配内存
+  static T* allocate(size_type n);
 
-  static void deallocate(T* ptr);
+  static void deallocate(T* ptr); // 释放内存
   static void deallocate(T* ptr, size_type n);
 
-  static void construct(T* ptr);
+  static void construct(T* ptr); // 构建对象
+  // copy construct
   static void construct(T* ptr, const T& value);
+  // move construct
   static void construct(T* ptr, T&& value);
 
+  // 泛型工厂函数，作为参数的路由，通过forward按照参数实际类型去匹配对应重载函数，实现完美转发
+  // 这个函数可以实现创建所有类型的对象，如果参数实际值是右值，创建会自动调用移动构造，如果是左值会匹配拷贝构造
   template <class... Args>
   static void construct(T* ptr, Args&& ...args);
 
-  static void destroy(T* ptr);
+  static void destroy(T* ptr); // 析构对象
   static void destroy(T* first, T* last);
 };
 
 template <class T>
-T* allocator<T>::allocate()
-{
+T* allocator<T>::allocate() {
   return static_cast<T*>(::operator new(sizeof(T)));
 }
 
 template <class T>
-T* allocator<T>::allocate(size_type n)
-{
-  if (n == 0)
+T* allocator<T>::allocate(size_type n) {
+  if (n == 0) {
     return nullptr;
+  }
   return static_cast<T*>(::operator new(n * sizeof(T)));
 }
 
 template <class T>
-void allocator<T>::deallocate(T* ptr)
-{
-  if (ptr == nullptr)
+void allocator<T>::deallocate(T* ptr) {
+  if (ptr == nullptr) {
     return;
+  }
   ::operator delete(ptr);
 }
 
 template <class T>
-void allocator<T>::deallocate(T* ptr, size_type /*size*/)
-{
-  if (ptr == nullptr)
+void allocator<T>::deallocate(T* ptr, size_type /*size*/) {
+  if (ptr == nullptr) {
     return;
+  }
   ::operator delete(ptr);
 }
 
 template <class T>
-void allocator<T>::construct(T* ptr)
-{
+void allocator<T>::construct(T* ptr) {
   yastl::construct(ptr);
 }
 
 template <class T>
-void allocator<T>::construct(T* ptr, const T& value)
-{
+void allocator<T>::construct(T* ptr, const T& value) {
   yastl::construct(ptr, value);
 }
 
 template <class T>
- void allocator<T>::construct(T* ptr, T&& value)
-{
+void allocator<T>::construct(T* ptr, T&& value) {
   yastl::construct(ptr, yastl::move(value));
 }
 
 template <class T>
 template <class ...Args>
- void allocator<T>::construct(T* ptr, Args&& ...args)
-{
+void allocator<T>::construct(T* ptr, Args&& ...args) {
   yastl::construct(ptr, yastl::forward<Args>(args)...);
 }
 
 template <class T>
-void allocator<T>::destroy(T* ptr)
-{
+void allocator<T>::destroy(T* ptr) {
   yastl::destroy(ptr);
 }
 
 template <class T>
-void allocator<T>::destroy(T* first, T* last)
-{
+void allocator<T>::destroy(T* first, T* last) {
   yastl::destroy(first, last);
 }
 

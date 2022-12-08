@@ -7,9 +7,7 @@
 #include <type_traits>
 
 namespace yastl {
-
-// helper struct
-
+// 在编译时判断真假用
 template <class T, T v>
 struct m_integral_constant {
   static constexpr T value = v;
@@ -20,12 +18,11 @@ using m_bool_constant = m_integral_constant<bool, b>;
 
 typedef m_bool_constant<true>  m_true_type;
 typedef m_bool_constant<false> m_false_type;
-
 /*****************************************************************************************/
 // type traits
 
 // is_pair
-
+// 自定义在编译时判断模板是否是pair
 // --- forward declaration begin
 template <class T1, class T2>
 struct pair;
