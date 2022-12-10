@@ -5,16 +5,16 @@ Yet another STL for learning.
 
 #### 阅读进度
 .
-├── algobase.h 
+├── algobase.h
 ├── algo.h
 ├── allocator.h         分配器文件，预先定义的接口  100%
 ├── construct.h         对象的构造和析构           100%
 ├── exceptdef.h         调试宏文件                 100%
 ├── functional.h
 ├── heap_algo.h
-├── iterator.h          迭代器的定义                 5%
+├── iterator.h          迭代器的定义                 35%
 ├── memory.h
 ├── type_traits.h       偏特化头文件以及pair判断    100%
-├── uninitialized.h     对未初始化的空间进行构造元素  20%  需要看懂迭代器实现
-├── util.h
+├── uninitialized.h     对未初始化的空间进行构造元素  100%
+├── util.h              给uninitialized.h使用的工具   10%
 └── vector.h

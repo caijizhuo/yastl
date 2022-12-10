@@ -19,82 +19,90 @@ struct random_access_iterator_tag : public bidirectional_iterator_tag {};
 // iterator 模板
 template <class Category, class T, class Distance = ptrdiff_t, class Pointer = T*, class Reference = T&>
 struct iterator {
-  typedef Category                             iterator_category;
-  typedef T                                    value_type;
-  typedef Pointer                              pointer;
-  typedef Reference                            reference;
-  typedef Distance                             difference_type;
+  typedef Category iterator_category;
+  typedef T value_type;
+  typedef Pointer pointer;
+  typedef Reference reference;
+  typedef Distance difference_type;
 };
 
 // iterator traits
-
+// 此类模板用于判断iter是否含有iterator_category，没有则为原生类型
+// 有个萃取前提，只有对有 iterator_category这个属性，并且可以转换为input_iterator_tag和output_iterator_tag的iterator萃取。
 template <class T>
-struct has_iterator_cat
-{
-private:
+struct has_iterator_cat {
+ private:
   struct two { char a; char b; };
-  template <class U> static two test(...);
-  template <class U> static char test(typename U::iterator_category* = 0);
-public:
+
+  template <class U>
+  static two test(...);
+
+  // 运用了SFINAE技巧，如果有iterator_category属性，会匹配到这里
+  template <class U>
+  static char test(typename U::iterator_category* = 0);
+ public:
+  // 返回值是char则是跑的下面的，否则是原生类型
   static const bool value = sizeof(test<T>(0)) == sizeof(char);
 };
 
+// 原生类型走这个实现
 template <class Iterator, bool>
 struct iterator_traits_impl {};
 
+// 如果第二个泛型为true，则编译此结构体，说明是迭代器，走这个类型
 template <class Iterator>
-struct iterator_traits_impl<Iterator, true>
-{
+struct iterator_traits_impl<Iterator, true> {
   typedef typename Iterator::iterator_category iterator_category;
-  typedef typename Iterator::value_type        value_type;
-  typedef typename Iterator::pointer           pointer;
-  typedef typename Iterator::reference         reference;
-  typedef typename Iterator::difference_type   difference_type;
+  typedef typename Iterator::value_type value_type;
+  typedef typename Iterator::pointer pointer;
+  typedef typename Iterator::reference reference;
+  typedef typename Iterator::difference_type difference_type;
 };
-
+// 给基础类型用的
 template <class Iterator, bool>
 struct iterator_traits_helper {};
-
+// 给迭代器类型用的
 template <class Iterator>
-struct iterator_traits_helper<Iterator, true>
-  : public iterator_traits_impl<Iterator,
-  std::is_convertible<typename Iterator::iterator_category, input_iterator_tag>::value ||
-  std::is_convertible<typename Iterator::iterator_category, output_iterator_tag>::value>
-{
-};
+struct iterator_traits_helper<Iterator, true> : 
+    public iterator_traits_impl<Iterator, std::is_convertible<typename Iterator::iterator_category, input_iterator_tag>::value ||
+                                std::is_convertible<typename Iterator::iterator_category, output_iterator_tag>::value>
+                                // 看 Iterator::iterator_categor是否可以转换为output_iterator_tag和input_iterator_tag
+{};
 
 // 萃取迭代器的特性
+// 萃取迭代器的目的就是输入一个迭代器，把元素的type给萃取出来，继承自helper,helper再继承impl
+/*
+- 如果是原生指针，会匹配到下面两个，typedef的定义为random
+- 如果是类类型，则会匹配到主模板，并根据has_iterator_cat类模板(根据value可判断类T中是否具有iterator_category属性)，
+如果为true，进而继承于iterator_traits_impl，最后将根据is_convertible类模板判断可否将类T转换为input和output指针决定是否进行
+typedef一系列操作
+*/
 template <class Iterator>
-struct iterator_traits 
-  : public iterator_traits_helper<Iterator, has_iterator_cat<Iterator>::value> {};
+struct iterator_traits : public iterator_traits_helper<Iterator, has_iterator_cat<Iterator>::value> {};
 
-// 针对原生指针的偏特化版本
+// 针对原生指针的偏特化版本,类型都是random_access_iterator_tag
 template <class T>
-struct iterator_traits<T*>
-{
-  typedef random_access_iterator_tag           iterator_category;
-  typedef T                                    value_type;
-  typedef T*                                   pointer;
-  typedef T&                                   reference;
-  typedef ptrdiff_t                            difference_type;
+struct iterator_traits<T*> {
+  typedef random_access_iterator_tag iterator_category;
+  typedef T value_type;
+  typedef T* pointer;
+  typedef T& reference;
+  typedef ptrdiff_t difference_type;
 };
-
+// 原生const指针的偏特化版本
 template <class T>
-struct iterator_traits<const T*>
-{
-  typedef random_access_iterator_tag           iterator_category;
-  typedef T                                    value_type;
-  typedef const T*                             pointer;
-  typedef const T&                             reference;
-  typedef ptrdiff_t                            difference_type;
+struct iterator_traits<const T*> {
+  typedef random_access_iterator_tag iterator_category;
+  typedef T value_type;
+  typedef const T* pointer;
+  typedef const T& reference;
+  typedef ptrdiff_t difference_type;
 };
 
 template <class T, class U, bool = has_iterator_cat<iterator_traits<T>>::value>
-struct has_iterator_cat_of
-  : public m_bool_constant<std::is_convertible<
-  typename iterator_traits<T>::iterator_category, U>::value>
-{
-};
+struct has_iterator_cat_of : 
+  public m_bool_constant<std::is_convertible<typename iterator_traits<T>::iterator_category, U>::value>
+{};
 
 // 萃取某种迭代器
 template <class T, class U>
@@ -116,11 +124,9 @@ template <class Iter>
 struct is_random_access_iterator : public has_iterator_cat_of<Iter, random_access_iterator_tag> {};
 
 template <class Iterator>
-struct is_iterator :
-  public m_bool_constant<is_input_iterator<Iterator>::value ||
-    is_output_iterator<Iterator>::value>
-{
-};
+struct is_iterator : // 条件是迭代器输入输出的tag至少有一个为真
+  public m_bool_constant<is_input_iterator<Iterator>::value || is_output_iterator<Iterator>::value>
+{};
 
 // 萃取某个迭代器的 category
 template <class Iterator>

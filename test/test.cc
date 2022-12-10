@@ -1,5 +1,6 @@
 #include <iostream>
 #include "vector.h"
+#include "iterator.h"
 int main()
 {
     std::cout.sync_with_stdio(false);
@@ -7,4 +8,5 @@ int main()
     for (auto i : v) {
         std::cout << i << " ";
     }
+    auto it = v.begin();
 }
