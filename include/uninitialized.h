@@ -150,7 +150,7 @@ ForwardIter uninitialized_fill_n(ForwardIter first, Size n, const T& value) {
 /*****************************************************************************************/
 template <class InputIter, class ForwardIter>
 ForwardIter unchecked_uninit_move(InputIter first, InputIter last, ForwardIter result, std::true_type) {
-  return yastl::move(first, last, result);
+  return yastl::move(first, last, result); // 可以直接移动
 }
 
 template <class InputIter, class ForwardIter>
@@ -158,7 +158,7 @@ ForwardIter unchecked_uninit_move(InputIter first, InputIter last, ForwardIter r
   ForwardIter cur = result;
   try {
     for (; first != last; ++first, ++cur) {
-      yastl::construct(&*cur, yastl::move(*first));
+      yastl::construct(&*cur, yastl::move(*first)); // 批量调用移动构造函数
     }
   }
   catch (...) {
@@ -170,7 +170,7 @@ ForwardIter unchecked_uninit_move(InputIter first, InputIter last, ForwardIter r
 template <class InputIter, class ForwardIter>
 ForwardIter uninitialized_move(InputIter first, InputIter last, ForwardIter result) {
   return yastl::unchecked_uninit_move(first, last, result,
-                                      std::is_trivially_move_assignable<
+                                      std::is_trivially_move_assignable<  // 平凡可移动
                                       typename iterator_traits<InputIter>::
                                       value_type>{});
 }

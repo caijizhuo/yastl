@@ -13,9 +13,8 @@ namespace yastl
 // move
 
 template <class T>
-typename std::remove_reference<T>::type&& move(T&& arg) noexcept
-{
-  return static_cast<typename std::remove_reference<T>::type&&>(arg);
+typename std::remove_reference<T>::type&& move(T&& arg) noexcept {
+  return static_cast<typename std::remove_reference<T>::type&&>(arg); // 就是一个模板类，引用移除
 }
 
 // forward

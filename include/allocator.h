@@ -93,11 +93,13 @@ void allocator<T>::construct(T* ptr, Args&& ...args) {
   yastl::construct(ptr, yastl::forward<Args>(args)...);
 }
 
+// 析构一个迭代器指向的内容
 template <class T>
 void allocator<T>::destroy(T* ptr) {
   yastl::destroy(ptr);
 }
 
+// 析构一堆迭代器指向的内容
 template <class T>
 void allocator<T>::destroy(T* first, T* last) {
   yastl::destroy(first, last);

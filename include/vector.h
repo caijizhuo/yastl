@@ -46,21 +46,21 @@ class vector
   static_assert(!std::is_same<bool, T>::value, "vector<bool> is abandoned in yastl");
 public:
   // vector 的嵌套型别定义
-  typedef yastl::allocator<T>                      allocator_type;
-  typedef yastl::allocator<T>                      data_allocator;
+  typedef yastl::allocator<T> allocator_type;
+  typedef yastl::allocator<T> data_allocator;
 
-  typedef typename allocator_type::value_type      value_type;
-  typedef typename allocator_type::pointer         pointer;
-  typedef typename allocator_type::const_pointer   const_pointer;
-  typedef typename allocator_type::reference       reference;
+  typedef typename allocator_type::value_type value_type;
+  typedef typename allocator_type::pointer pointer;
+  typedef typename allocator_type::const_pointer const_pointer;
+  typedef typename allocator_type::reference reference;
   typedef typename allocator_type::const_reference const_reference;
-  typedef typename allocator_type::size_type       size_type;
+  typedef typename allocator_type::size_type size_type;
   typedef typename allocator_type::difference_type difference_type;
 
-  typedef value_type*                              iterator;
-  typedef const value_type*                        const_iterator;
-  typedef yastl::reverse_iterator<iterator>        reverse_iterator;
-  typedef yastl::reverse_iterator<const_iterator>  const_reverse_iterator;
+  typedef value_type* iterator;
+  typedef const value_type* const_iterator;
+  typedef yastl::reverse_iterator<iterator> reverse_iterator;
+  typedef yastl::reverse_iterator<const_iterator> const_reverse_iterator;
 
   allocator_type get_allocator() { return data_allocator(); }
 
@@ -71,55 +71,52 @@ private:
 
 public:
   // 构造、复制、移动、析构函数
-  vector() noexcept
-  { try_init(); }
+  vector() noexcept {
+    try_init();
+  }
 
-  explicit vector(size_type n)
-  { fill_init(n, value_type()); }
+  explicit vector(size_type n) {
+    fill_init(n, value_type());
+  }
 
-  vector(size_type n, const value_type& value)
-  { fill_init(n, value); }
+  vector(size_type n, const value_type& value) {
+    fill_init(n, value);
+  }
 
-  template <class Iter, typename std::enable_if<
-    yastl::is_input_iterator<Iter>::value, int>::type = 0>
-  vector(Iter first, Iter last)
-  {
+  // 如果传入的参数是迭代器
+  template <class Iter, typename std::enable_if<yastl::is_input_iterator<Iter>::value, int>::type = 0>
+  vector(Iter first, Iter last) {
     yastl_DEBUG(!(last < first));
     range_init(first, last);
   }
 
-  vector(const vector& rhs)
-  {
+  vector(const vector& rhs) {
     range_init(rhs.begin_, rhs.end_);
   }
 
-  vector(vector&& rhs) noexcept
-    :begin_(rhs.begin_),
-    end_(rhs.end_),
-    cap_(rhs.cap_)
-  {
+  // 移动构造
+  vector(vector&& rhs) noexcept : begin_(rhs.begin_), end_(rhs.end_), cap_(rhs.cap_) {
     rhs.begin_ = nullptr;
     rhs.end_ = nullptr;
     rhs.cap_ = nullptr;
   }
 
-  vector(std::initializer_list<value_type> ilist)
-  {
+  // 用std的initializer_list做初始化
+  vector(std::initializer_list<value_type> ilist) {
     range_init(ilist.begin(), ilist.end());
   }
 
+  // 赋值声明
   vector& operator=(const vector& rhs);
   vector& operator=(vector&& rhs) noexcept;
 
-  vector& operator=(std::initializer_list<value_type> ilist)
-  {
+  vector& operator=(std::initializer_list<value_type> ilist) {
     vector tmp(ilist.begin(), ilist.end());
     swap(tmp);
     return *this;
   }
 
-  ~vector()
-  { 
+  ~vector() {
     destroy_and_recover(begin_, end_, cap_ - begin_);
     begin_ = end_ = cap_ = nullptr;
   }
@@ -127,44 +124,62 @@ public:
 public:
 
   // 迭代器相关操作
-  iterator               begin()         noexcept 
-  { return begin_; }
-  const_iterator         begin()   const noexcept
-  { return begin_; }
-  iterator               end()           noexcept
-  { return end_; }
-  const_iterator         end()     const noexcept 
-  { return end_; }
+  // 返回第一个迭代器
+  iterator begin() noexcept {
+    return begin_;
+  }
+  const_iterator begin() const noexcept {
+    return begin_;
+  }
+  iterator end() noexcept {
+    return end_;
+  }
+  const_iterator end() const noexcept {
+    return end_;
+  }
 
-  reverse_iterator       rbegin()        noexcept 
-  { return reverse_iterator(end()); }
-  const_reverse_iterator rbegin()  const noexcept
-  { return const_reverse_iterator(end()); }
-  reverse_iterator       rend()          noexcept
-  { return reverse_iterator(begin()); }
-  const_reverse_iterator rend()    const noexcept 
-  { return const_reverse_iterator(begin()); }
+  reverse_iterator rbegin() noexcept {
+    return reverse_iterator(end());
+  }
+  const_reverse_iterator rbegin()  const noexcept {
+    return const_reverse_iterator(end());
+  }
+  reverse_iterator rend() noexcept {
+    return reverse_iterator(begin());
+  }
+  const_reverse_iterator rend() const noexcept {
+    return const_reverse_iterator(begin());
+  }
 
-  const_iterator         cbegin()  const noexcept 
-  { return begin(); }
-  const_iterator         cend()    const noexcept
-  { return end(); }
-  const_reverse_iterator crbegin() const noexcept
-  { return rbegin(); }
-  const_reverse_iterator crend()   const noexcept
-  { return rend(); }
+  const_iterator cbegin() const noexcept {
+    return begin();
+  }
+  const_iterator cend() const noexcept {
+    return end();
+  }
+  const_reverse_iterator crbegin() const noexcept {
+    return rbegin();
+  }
+  const_reverse_iterator crend() const noexcept {
+    return rend();
+  }
 
   // 容量相关操作
-  bool      empty()    const noexcept
-  { return begin_ == end_; }
-  size_type size()     const noexcept
-  { return static_cast<size_type>(end_ - begin_); }
-  size_type max_size() const noexcept
-  { return static_cast<size_type>(-1) / sizeof(T); }
-  size_type capacity() const noexcept
-  { return static_cast<size_type>(cap_ - begin_); }
-  void      reserve(size_type n);
-  void      shrink_to_fit();
+  bool empty() const noexcept {
+    return begin_ == end_;
+  }
+  size_type size() const noexcept {
+    return static_cast<size_type>(end_ - begin_);
+  }
+  // 用溢出值做被除数
+  size_type max_size() const noexcept {
+    return static_cast<size_type>(-1) / sizeof(T);
+  }
+  size_type capacity() const noexcept {
+    return static_cast<size_type>(cap_ - begin_);
+  }
+  void reserve(size_type n);
+  void shrink_to_fit();
 
   // 访问元素相关操作
   reference operator[](size_type n)
@@ -370,16 +385,13 @@ vector<T>& vector<T>::operator=(vector&& rhs) noexcept
 
 // 预留空间大小，当原容量小于要求大小时，才会重新分配
 template <class T>
-void vector<T>::reserve(size_type n)
-{
-  if (capacity() < n)
-  {
-    THROW_LENGTH_ERROR_IF(n > max_size(),
-                          "n can not larger than max_size() in vector<T>::reserve(n)");
+void vector<T>::reserve(size_type n) {
+  if (capacity() < n) {
+    THROW_LENGTH_ERROR_IF(n > max_size(), "n can not larger than max_size() in vector<T>::reserve(n)");
     const auto old_size = size();
     auto tmp = data_allocator::allocate(n);
-    yastl::uninitialized_move(begin_, end_, tmp);
-    data_allocator::deallocate(begin_, cap_ - begin_);
+    yastl::uninitialized_move(begin_, end_, tmp); // 把begin到end的元素移动到tmp开头
+    data_allocator::deallocate(begin_, cap_ - begin_); // 释放begin的内存
     begin_ = tmp;
     end_ = tmp + old_size;
     cap_ = begin_ + n;
@@ -388,10 +400,8 @@ void vector<T>::reserve(size_type n)
 
 // 放弃多余的容量
 template <class T>
-void vector<T>::shrink_to_fit()
-{
-  if (end_ < cap_)
-  {
+void vector<T>::shrink_to_fit() {
+  if (end_ < cap_) {
     reinsert(size());
   }
 }
@@ -613,10 +623,9 @@ range_init(Iter first, Iter last)
 // destroy_and_recover 函数
 template <class T>
 void vector<T>::
-destroy_and_recover(iterator first, iterator last, size_type n)
-{
-  data_allocator::destroy(first, last);
-  data_allocator::deallocate(first, n);
+destroy_and_recover(iterator first, iterator last, size_type n) {
+  data_allocator::destroy(first, last); // 先调用析构函数
+  data_allocator::deallocate(first, n); // 再释放内存空间
 }
 
 // get_new_cap 函数
@@ -867,15 +876,12 @@ copy_insert(iterator pos, IIter first, IIter last)
 
 // reinsert 函数
 template <class T>
-void vector<T>::reinsert(size_type size)
-{
+void vector<T>::reinsert(size_type size) {
   auto new_begin = data_allocator::allocate(size);
-  try
-  {
+  try {
     yastl::uninitialized_move(begin_, end_, new_begin);
   }
-  catch (...)
-  {
+  catch (...) {
     data_allocator::deallocate(new_begin, size);
     throw;
   }
