@@ -33,10 +33,9 @@ T&& forward(typename std::remove_reference<T>::type&& arg) noexcept
 }
 
 // swap
-
+// 交换两个类型的东西
 template <class Tp>
-void swap(Tp& lhs, Tp& rhs)
-{
+void swap(Tp& lhs, Tp& rhs) {
   auto tmp(yastl::move(lhs));
   lhs = yastl::move(rhs);
   rhs = yastl::move(tmp);

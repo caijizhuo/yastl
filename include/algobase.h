@@ -158,26 +158,21 @@ unchecked_copy_backward(BidirectionalIter1 first, BidirectionalIter1 last,
 }
 
 // 为 trivially_copy_assignable 类型提供特化版本
+// 把[first, last)顺序拷贝到以result为结尾的容器中，即[result - n, result)
 template <class Tp, class Up>
-typename std::enable_if<
-  std::is_same<typename std::remove_const<Tp>::type, Up>::value &&
-  std::is_trivially_copy_assignable<Up>::value,
-  Up*>::type
-unchecked_copy_backward(Tp* first, Tp* last, Up* result)
-{
+typename std::enable_if<std::is_same<typename std::remove_const<Tp>::type, Up>::value &&
+                        std::is_trivially_copy_assignable<Up>::value,Up*>::type
+unchecked_copy_backward(Tp* first, Tp* last, Up* result) {
   const auto n = static_cast<size_t>(last - first);
-  if (n != 0)
-  {
+  if (n != 0) {
     result -= n;
     std::memmove(result, first, n * sizeof(Up));
   }
   return result;
 }
-
+// 将指定序列 局部 逆序 放在另一个序列中
 template <class BidirectionalIter1, class BidirectionalIter2>
-BidirectionalIter2 
-copy_backward(BidirectionalIter1 first, BidirectionalIter1 last, BidirectionalIter2 result)
-{
+BidirectionalIter2 copy_backward(BidirectionalIter1 first, BidirectionalIter1 last, BidirectionalIter2 result) {
   return unchecked_copy_backward(first, last, result);
 }
 

@@ -182,68 +182,66 @@ public:
   void shrink_to_fit();
 
   // 访问元素相关操作
-  reference operator[](size_type n)
-  {
+  reference operator[](size_type n) {
     yastl_DEBUG(n < size());
     return *(begin_ + n);
   }
-  const_reference operator[](size_type n) const
-  {
+  const_reference operator[](size_type n) const {
     yastl_DEBUG(n < size());
     return *(begin_ + n);
   }
-  reference at(size_type n)
-  {
+  // 和[]返回结果相同
+  reference at(size_type n) {
     THROW_OUT_OF_RANGE_IF(!(n < size()), "vector<T>::at() subscript out of range");
     return (*this)[n];
   }
-  const_reference at(size_type n) const
-  {
+  const_reference at(size_type n) const {
     THROW_OUT_OF_RANGE_IF(!(n < size()), "vector<T>::at() subscript out of range");
     return (*this)[n];
   }
 
-  reference front()
-  {
+  reference front() {
     yastl_DEBUG(!empty());
     return *begin_;
   }
-  const_reference front() const
-  {
+  const_reference front() const {
     yastl_DEBUG(!empty());
     return *begin_;
   }
-  reference back()
-  {
+  reference back() {
     yastl_DEBUG(!empty());
     return *(end_ - 1);
   }
-  const_reference back() const
-  {
+  const_reference back() const {
     yastl_DEBUG(!empty());
     return *(end_ - 1);
   }
 
-  pointer       data()       noexcept { return begin_; }
-  const_pointer data() const noexcept { return begin_; }
+  // data()返回第一个元素的指针
+  pointer data() noexcept {
+    return begin_;
+  }
+  const_pointer data() const noexcept {
+    return begin_;
+  }
 
   // 修改容器相关操作
 
   // assign
-
-  void assign(size_type n, const value_type& value)
-  { fill_assign(n, value); }
-
-  template <class Iter, typename std::enable_if<
-    yastl::is_input_iterator<Iter>::value, int>::type = 0>
-  void assign(Iter first, Iter last)
-  {
+  // 赋值n个value给本vector
+  void assign(size_type n, const value_type& value) {
+    fill_assign(n, value);
+  }
+  // 把本vector赋值成[first, last)的内容
+  template <class Iter, typename std::enable_if<yastl::is_input_iterator<Iter>::value, int>::type = 0>
+  void assign(Iter first, Iter last) {
     yastl_DEBUG(!(last < first));
     copy_assign(first, last, iterator_category(first));
   }
-
-  void assign(std::initializer_list<value_type> il)
-  { copy_assign(il.begin(), il.end(), yastl::forward_iterator_tag{}); }
+  // 用initializer_list来初始化
+  void assign(std::initializer_list<value_type> il) {
+    copy_assign(il.begin(), il.end(), yastl::forward_iterator_tag{});
+  }
 
   // emplace / emplace_back
 
@@ -256,8 +254,9 @@ public:
   // push_back / pop_back
 
   void push_back(const value_type& value);
-  void push_back(value_type&& value)
-  { emplace_back(yastl::move(value)); }
+  void push_back(value_type&& value) { // 转换成右值
+    emplace_back(yastl::move(value));
+  }
 
   void pop_back();
 
@@ -309,7 +308,7 @@ private:
 
   void      destroy_and_recover(iterator first, iterator last, size_type n);
 
-  // calculate the growth size
+  // calculate the growth size 获得应该变成的大小数
   size_type get_new_cap(size_type add_size);
 
   // assign
@@ -410,69 +409,54 @@ void vector<T>::shrink_to_fit() {
 template <class T>
 template <class ...Args>
 typename vector<T>::iterator
-vector<T>::emplace(const_iterator pos, Args&& ...args)
-{
+vector<T>::emplace(const_iterator pos, Args&& ...args) {
   yastl_DEBUG(pos >= begin() && pos <= end());
   iterator xpos = const_cast<iterator>(pos);
   const size_type n = xpos - begin_;
-  if (end_ != cap_ && xpos == end_)
-  {
-    data_allocator::construct(yastl::address_of(*end_), yastl::forward<Args>(args)...);
+  if (end_ != cap_ && xpos == end_) { // 在最后插入的，但是没到cap_
+    data_allocator::construct(yastl::address_of(*end_), yastl::forward<Args>(args)...); // 直接在end_的地址构造一个元素
     ++end_;
-  }
-  else if (end_ != cap_)
-  {
+  } else if (end_ != cap_) { // 不是在最后插入的，需要把pos后面的往后都挪一个位置
     auto new_end = end_;
-    data_allocator::construct(yastl::address_of(*end_), *(end_ - 1));
+    data_allocator::construct(yastl::address_of(*end_), *(end_ - 1)); // 在end的位置构建一个end前一个元素
     ++new_end;
-    yastl::copy_backward(xpos, end_ - 1, end_);
+    yastl::copy_backward(xpos, end_ - 1, end_); // 把[pos, end - 1)全往后挪一个位置
     *xpos = value_type(yastl::forward<Args>(args)...);
     end_ = new_end;
-  }
-  else
-  {
+  } else {   // end_ == cap_ 需要重新开一片空间给xpos
     reallocate_emplace(xpos, yastl::forward<Args>(args)...);
   }
-  return begin() + n;
+  return begin() + n; // 返回插入的位置
 }
 
 // 在尾部就地构造元素，避免额外的复制或移动开销
 template <class T>
 template <class ...Args>
-void vector<T>::emplace_back(Args&& ...args)
-{
-  if (end_ < cap_)
-  {
-    data_allocator::construct(yastl::address_of(*end_), yastl::forward<Args>(args)...);
+void vector<T>::emplace_back(Args&& ...args) {
+  if (end_ < cap_) { // 空间还有剩余，直接构造
+    data_allocator::construct(yastl::address_of(*end_), yastl::forward<Args>(args)...); // 完美转发
     ++end_;
-  }
-  else
-  {
-    reallocate_emplace(end_, yastl::forward<Args>(args)...);
+  } else {
+    reallocate_emplace(end_, yastl::forward<Args>(args)...); // 重新分空间构造
   }
 }
 
 // 在尾部插入元素
 template <class T>
-void vector<T>::push_back(const value_type& value)
-{
-  if (end_ != cap_)
-  {
-    data_allocator::construct(yastl::address_of(*end_), value);
+void vector<T>::push_back(const value_type& value) {
+  if (end_ != cap_) {
+    data_allocator::construct(yastl::address_of(*end_), value); // 拷贝构造
     ++end_;
-  }
-  else
-  {
+  } else {
     reallocate_insert(end_, value);
   }
 }
 
 // 弹出尾部元素
 template <class T>
-void vector<T>::pop_back()
-{
+void vector<T>::pop_back() {
   yastl_DEBUG(!empty());
-  data_allocator::destroy(end_ - 1);
+  data_allocator::destroy(end_ - 1); // 析构最后一个元素
   --end_;
 }
 
@@ -546,12 +530,10 @@ void vector<T>::resize(size_type new_size, const value_type& value)
   }
 }
 
-// 与另一个 vector 交换
+// 将调用的vector与right hand side这个vector 交换
 template <class T>
-void vector<T>::swap(vector<T>& rhs) noexcept
-{
-  if (this != &rhs)
-  {
+void vector<T>::swap(vector<T>& rhs) noexcept {
+  if (this != &rhs) {
     yastl::swap(begin_, rhs.begin_);
     yastl::swap(end_, rhs.end_);
     yastl::swap(cap_, rhs.cap_);
@@ -620,7 +602,7 @@ range_init(Iter first, Iter last)
   yastl::uninitialized_copy(first, last, begin_);
 }
 
-// destroy_and_recover 函数
+// destroy_and_recover 函数 为空间内每个元素调用析构函数并释放内存空间
 template <class T>
 void vector<T>::
 destroy_and_recover(iterator first, iterator last, size_type n) {
@@ -630,41 +612,30 @@ destroy_and_recover(iterator first, iterator last, size_type n) {
 
 // get_new_cap 函数
 template <class T>
-typename vector<T>::size_type 
-vector<T>::
-get_new_cap(size_type add_size)
-{
+typename vector<T>::size_type vector<T>::get_new_cap(size_type add_size) {
   const auto old_size = capacity();
   THROW_LENGTH_ERROR_IF(old_size > max_size() - add_size,
                         "vector<T>'s size too big");
-  if (old_size > max_size() - old_size / 2)
-  {
+  if (old_size > max_size() - old_size / 2) {   // 之前的大小比max的2/3还大
     return old_size + add_size > max_size() - 16
       ? old_size + add_size : old_size + add_size + 16;
   }
   const size_type new_size = old_size == 0
     ? yastl::max(add_size, static_cast<size_type>(16))
-    : yastl::max(old_size + old_size / 2, old_size + add_size);
+    : yastl::max(old_size + old_size / 2, old_size + add_size);  // 扩充后应该的大小，1.5倍或者add_size
   return new_size;
 }
 
-// fill_assign 函数
+// fill_assign 函数，填充n个为value的值
 template <class T>
-void vector<T>::
-fill_assign(size_type n, const value_type& value)
-{
-  if (n > capacity())
-  {
+void vector<T>::fill_assign(size_type n, const value_type& value) {
+  if (n > capacity()) { // 如果n个数量比现在的容量大，就重新开一个，之后和现在的vector交换
     vector tmp(n, value);
     swap(tmp);
-  }
-  else if (n > size())
-  {
+  } else if (n > size()) { // 只是比现在的大，但是没超过容量,就强行改
     yastl::fill(begin(), end(), value);
     end_ = yastl::uninitialized_fill_n(end_, n - size(), value);
-  }
-  else
-  {
+  } else { // 否则，从begin填充n个，之后把后面的删了
     erase(yastl::fill_n(begin_, n, value), end_);
   }
 }
@@ -672,29 +643,22 @@ fill_assign(size_type n, const value_type& value)
 // copy_assign 函数
 template <class T>
 template <class IIter>
-void vector<T>::
-copy_assign(IIter first, IIter last, input_iterator_tag)
-{
+void vector<T>::copy_assign(IIter first, IIter last, input_iterator_tag) {
   auto cur = begin_;
-  for (; first != last && cur != end_; ++first, ++cur)
-  {
+  for (; first != last && cur != end_; ++first, ++cur) { // 当前不到末尾并且目标也没到尾部
     *cur = *first;
   }
-  if (first == last)
-  {
+  if (first == last) { // 目标先到尾部，把当前到最后都给删了
     erase(cur, end_);
-  }
-  else
-  {
-    insert(end_, first, last);
+  } else {
+    insert(end_, first, last); // 当前先到尾部，后面批量插入
   }
 }
 
 // 用 [first, last) 为容器赋值
 template <class T>
 template <class FIter>
-void vector<T>::
-copy_assign(FIter first, FIter last, forward_iterator_tag)
+void vector<T>::copy_assign(FIter first, FIter last, forward_iterator_tag)
 {
   const size_type len = yastl::distance(first, last);
   if (len > capacity())
@@ -721,25 +685,20 @@ copy_assign(FIter first, FIter last, forward_iterator_tag)
 // 重新分配空间并在 pos 处就地构造元素
 template <class T>
 template <class ...Args>
-void vector<T>::
-reallocate_emplace(iterator pos, Args&& ...args)
-{
-  const auto new_size = get_new_cap(1);
+void vector<T>::reallocate_emplace(iterator pos, Args&& ...args) {
+  const auto new_size = get_new_cap(1); // 获得新的大小，不一定是1，只是语义上插入一个元素
   auto new_begin = data_allocator::allocate(new_size);
   auto new_end = new_begin;
-  try
-  {
-    new_end = yastl::uninitialized_move(begin_, pos, new_begin);
-    data_allocator::construct(yastl::address_of(*new_end), yastl::forward<Args>(args)...);
+  try {
+    new_end = yastl::uninitialized_move(begin_, pos, new_begin); // 先把[begin, pos)数据移动过去
+    data_allocator::construct(yastl::address_of(*new_end), yastl::forward<Args>(args)...); // 在最后调用移动构造函数
     ++new_end;
-    new_end = yastl::uninitialized_move(pos, end_, new_end);
-  }
-  catch (...)
-  {
+    new_end = yastl::uninitialized_move(pos, end_, new_end); //再把[pos, end)的移过去
+  } catch (...) {
     data_allocator::deallocate(new_begin, new_size);
     throw;
   }
-  destroy_and_recover(begin_, end_, cap_ - begin_);
+  destroy_and_recover(begin_, end_, cap_ - begin_); // 释放原先的空间
   begin_ = new_begin;
   end_ = new_end;
   cap_ = new_begin + new_size;
@@ -747,8 +706,7 @@ reallocate_emplace(iterator pos, Args&& ...args)
 
 // 重新分配空间并在 pos 处插入元素
 template <class T>
-void vector<T>::reallocate_insert(iterator pos, const value_type& value)
-{
+void vector<T>::reallocate_insert(iterator pos, const value_type& value) {
   const auto new_size = get_new_cap(1);
   auto new_begin = data_allocator::allocate(new_size);
   auto new_end = new_begin;
@@ -933,8 +891,7 @@ bool operator>=(const vector<T>& lhs, const vector<T>& rhs)
 
 // 重载 yastl 的 swap
 template <class T>
-void swap(vector<T>& lhs, vector<T>& rhs)
-{
+void swap(vector<T>& lhs, vector<T>& rhs) {
   lhs.swap(rhs);
 }
 

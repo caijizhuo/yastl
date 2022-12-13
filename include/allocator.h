@@ -72,21 +72,25 @@ void allocator<T>::deallocate(T* ptr, size_type /*size*/) {
   ::operator delete(ptr);
 }
 
+// 根据指针构造
 template <class T>
 void allocator<T>::construct(T* ptr) {
   yastl::construct(ptr);
 }
 
+// 拷贝构造分配
 template <class T>
 void allocator<T>::construct(T* ptr, const T& value) {
   yastl::construct(ptr, value);
 }
 
+// 移动构造分配
 template <class T>
 void allocator<T>::construct(T* ptr, T&& value) {
   yastl::construct(ptr, yastl::move(value));
 }
 
+// 完美转发构造，且多个参数
 template <class T>
 template <class ...Args>
 void allocator<T>::construct(T* ptr, Args&& ...args) {

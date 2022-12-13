@@ -10,8 +10,5 @@ int main()
     }
     std::cout << std::endl;
     v.reserve(1000);
-
-
-
     std::cout << "end!" << std::endl;
 }
