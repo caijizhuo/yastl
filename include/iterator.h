@@ -168,6 +168,7 @@ distance_dispatch(RandomIter first, RandomIter last, random_access_iterator_tag)
   return last - first;
 }
 
+// 返回first到last的距离
 template <class InputIterator>
 typename iterator_traits<InputIterator>::difference_type
 distance(InputIterator first, InputIterator last) {
@@ -204,7 +205,7 @@ void advance_dispatch(RandomIter& i, Distance n, random_access_iterator_tag) {
   i += n;
 }
 
-// 总入口，让它来决定编译哪种advance_dispatch
+// 总入口，让它来决定编译哪种advance_dispatch，让迭代器i前进n次
 template <class InputIterator, class Distance>
 void advance(InputIterator& i, Distance n) {
   advance_dispatch(i, n, iterator_category(i));

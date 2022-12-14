@@ -275,9 +275,9 @@ unchecked_move(Tp* first, Tp* last, Up* result)
   return result + n;
 }
 
+// 把[first, last)移动到result上，first和result迭代器类型可以不同
 template <class InputIter, class OutputIter>
-OutputIter move(InputIter first, InputIter last, OutputIter result)
-{
+OutputIter move(InputIter first, InputIter last, OutputIter result) {
   return unchecked_move(first, last, result);
 }
 
@@ -287,56 +287,47 @@ OutputIter move(InputIter first, InputIter last, OutputIter result)
 /*****************************************************************************************/
 // bidirectional_iterator_tag 版本
 template <class BidirectionalIter1, class BidirectionalIter2>
-BidirectionalIter2
-unchecked_move_backward_cat(BidirectionalIter1 first, BidirectionalIter1 last,
-                            BidirectionalIter2 result, yastl::bidirectional_iterator_tag)
-{
-  while (first != last)
+BidirectionalIter2 unchecked_move_backward_cat(BidirectionalIter1 first, BidirectionalIter1 last,
+                                               BidirectionalIter2 result, yastl::bidirectional_iterator_tag) {
+  while (first != last) { // 只能依次遍历，比较指针作为结束条件
     *--result = yastl::move(*--last);
+  }
   return result;
 }
 
 // random_access_iterator_tag 版本
 template <class RandomIter1, class RandomIter2>
-RandomIter2
-unchecked_move_backward_cat(RandomIter1 first, RandomIter1 last,
-                            RandomIter2 result, yastl::random_access_iterator_tag)
-{
-  for (auto n = last - first; n > 0; --n)
+RandomIter2 unchecked_move_backward_cat(RandomIter1 first, RandomIter1 last,
+                                        RandomIter2 result, yastl::random_access_iterator_tag) {
+  for (auto n = last - first; n > 0; --n) { // 好像和上面的没啥太大区别？比较次数作为结束条件
     *--result = yastl::move(*--last);
+  }
   return result;
 }
 
+// 根据iter种类细化实现
 template <class BidirectionalIter1, class BidirectionalIter2>
-BidirectionalIter2
-unchecked_move_backward(BidirectionalIter1 first, BidirectionalIter1 last, 
-                        BidirectionalIter2 result)
-{
-  return unchecked_move_backward_cat(first, last, result,
-                                     iterator_category(first));
+BidirectionalIter2 unchecked_move_backward(BidirectionalIter1 first, BidirectionalIter1 last, 
+                                           BidirectionalIter2 result) {
+  return unchecked_move_backward_cat(first, last, result, iterator_category(first));
 }
 
-// 为 trivially_copy_assignable 类型提供特化版本
+// 为 trivially_copy_assignable 类型提供特化版本, 返回以result为尾区间的区间头指针
 template <class Tp, class Up>
-typename std::enable_if<
-  std::is_same<typename std::remove_const<Tp>::type, Up>::value &&
-  std::is_trivially_move_assignable<Up>::value,
-  Up*>::type
-unchecked_move_backward(Tp* first, Tp* last, Up* result)
-{
+typename std::enable_if<std::is_same<typename std::remove_const<Tp>::type, Up>::value &&
+                        std::is_trivially_move_assignable<Up>::value, Up*>::type
+unchecked_move_backward(Tp* first, Tp* last, Up* result) {
   const size_t n = static_cast<size_t>(last - first);
-  if (n != 0)
-  {
+  if (n != 0) {
     result -= n;
     std::memmove(result, first, n * sizeof(Up));
   }
   return result;
 }
 
+// 将 [first, last)区间内的元素移动到 [result - n, result)内 n = ele_count
 template <class BidirectionalIter1, class BidirectionalIter2>
-BidirectionalIter2
-move_backward(BidirectionalIter1 first, BidirectionalIter1 last, BidirectionalIter2 result)
-{
+BidirectionalIter2 move_backward(BidirectionalIter1 first, BidirectionalIter1 last, BidirectionalIter2 result) {
   return unchecked_move_backward(first, last, result);
 }
 

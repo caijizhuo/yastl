@@ -38,7 +38,7 @@ ForwardIter unchecked_uninit_copy(InputIter first, InputIter last, ForwardIter r
 }
 
 // 泛型总入口,要求此函数要么构造所有，要么一个都不构造，
-// 把 [first, last) 上的内容复制到以 result 为起始处的空间，返回复制结束的位置
+// 把 [first, last) 上的内容复制到以 result 为起始处的空间，返回复制结束的位置, 拷贝构造
 template <class InputIter, class ForwardIter>
 ForwardIter uninitialized_copy(InputIter first, InputIter last, ForwardIter result) {
   return yastl::unchecked_uninit_copy(first, last, result, 
@@ -168,6 +168,7 @@ ForwardIter unchecked_uninit_move(InputIter first, InputIter last, ForwardIter r
   return cur;
 }
 
+// 把[first, last)上的内容移动到以 result 为起始处的空间，返回移动结束的位置
 template <class InputIter, class ForwardIter>
 ForwardIter uninitialized_move(InputIter first, InputIter last, ForwardIter result) {
   return yastl::unchecked_uninit_move(first, last, result,
