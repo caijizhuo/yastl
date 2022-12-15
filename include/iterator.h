@@ -10,10 +10,15 @@
 namespace yastl {
 
 // 五种迭代器类型
+// 输入迭代器指向的位置只能被顺序读取
 struct input_iterator_tag {};
+// 输出迭代器指向的位置只能被顺序写入
 struct output_iterator_tag {};
+// 前向迭代器只能自增不能自减
 struct forward_iterator_tag : public input_iterator_tag {};
+// 双向迭代器既能自增，又能自减
 struct bidirectional_iterator_tag : public forward_iterator_tag {};
+// 随机访问迭代器，是一种特殊的双向迭代器，除了自增自减1之外，还能自增自减n
 struct random_access_iterator_tag : public bidirectional_iterator_tag {};
 
 // iterator 模板

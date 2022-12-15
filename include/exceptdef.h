@@ -7,7 +7,7 @@
 
 namespace yastl {
 
-#define yastl_DEBUG(expr) \
+#define YASTL_DEBUG(expr) \
   assert(expr)  
 
 #define THROW_LENGTH_ERROR_IF(expr, what) \

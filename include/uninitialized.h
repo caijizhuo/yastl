@@ -15,12 +15,13 @@ namespace yastl {
 // uninitialized_copy
 // 把 [first, last) 上的内容复制到以 result 为起始处的空间，返回复制结束的位置
 /*****************************************************************************************/
-// 会调用拷贝构造
+// 会调用拷贝构造,构造函数不重要版本
 template <class InputIter, class ForwardIter>
 ForwardIter unchecked_uninit_copy(InputIter first, InputIter last, ForwardIter result, std::true_type) {
   return yastl::copy(first, last, result); // 只复制这一段的内存 为浅拷贝
 }
 
+// 构造函数重要版本
 template <class InputIter, class ForwardIter>
 ForwardIter unchecked_uninit_copy(InputIter first, InputIter last, ForwardIter result, std::false_type) {
   auto cur = result;
@@ -28,8 +29,7 @@ ForwardIter unchecked_uninit_copy(InputIter first, InputIter last, ForwardIter r
     for (; first != last; ++first, ++cur) {
       yastl::construct(&*cur, *first);  // 调用构造函数 可能为深拷贝
     }
-  }
-  catch (...) { // 有异常就全部释放
+  } catch (...) { // 有异常就全部释放
     for (; result != cur; --cur) {
       yastl::destroy(&*cur);
     }
@@ -42,19 +42,20 @@ ForwardIter unchecked_uninit_copy(InputIter first, InputIter last, ForwardIter r
 template <class InputIter, class ForwardIter>
 ForwardIter uninitialized_copy(InputIter first, InputIter last, ForwardIter result) {
   return yastl::unchecked_uninit_copy(first, last, result, 
-                                     std::is_trivially_copy_assignable<
-                                     typename iterator_traits<ForwardIter>::value_type>{});  // 判断是否是无用的拷贝构造函数 plain old data
+                                     std::is_trivially_copy_assignable<   // 判断是否是无用的拷贝构造函数 plain old data
+                                     typename iterator_traits<ForwardIter>::value_type>{});  
 }
 
 /*****************************************************************************************/
 // uninitialized_copy_n
 // 把 [first, first + n) 上的内容复制到以 result 为起始处的空间，返回复制结束的位置
 /*****************************************************************************************/
+// 构造函数不重要版本
 template <class InputIter, class Size, class ForwardIter>
 ForwardIter unchecked_uninit_copy_n(InputIter first, Size n, ForwardIter result, std::true_type) {
   return yastl::copy_n(first, n, result).second;
 }
-
+// 构造函数重要版本
 template <class InputIter, class Size, class ForwardIter>
 ForwardIter unchecked_uninit_copy_n(InputIter first, Size n, ForwardIter result, std::false_type) {
   auto cur = result;
@@ -62,15 +63,14 @@ ForwardIter unchecked_uninit_copy_n(InputIter first, Size n, ForwardIter result,
     for (; n > 0; --n, ++cur, ++first) {
       yastl::construct(&*cur, *first);
     }
-  }
-  catch (...) {
+  } catch (...) {
     for (; result != cur; --cur) {
       yastl::destroy(&*cur);
     } 
   }
   return cur;
 }
-
+// 把 [first, first + n) 上的内容复制到以 result 为起始处的空间，返回复制结束的位置
 template <class InputIter, class Size, class ForwardIter>
 ForwardIter uninitialized_copy_n(InputIter first, Size n, ForwardIter result) {
   return yastl::unchecked_uninit_copy_n(first, n, result,
@@ -83,12 +83,12 @@ ForwardIter uninitialized_copy_n(InputIter first, Size n, ForwardIter result) {
 // uninitialized_fill
 // 在 [first, last) 区间内填充元素值
 /*****************************************************************************************/
+// 构造函数不重要
 template <class ForwardIter, class T>
-void unchecked_uninit_fill(ForwardIter first, ForwardIter last, const T& value, std::true_type)
-{
+void unchecked_uninit_fill(ForwardIter first, ForwardIter last, const T& value, std::true_type) {
   yastl::fill(first, last, value);
 }
-
+// 构造函数重要
 template <class ForwardIter, class T>
 void unchecked_uninit_fill(ForwardIter first, ForwardIter last, const T& value, std::false_type) {
   auto cur = first;
@@ -96,31 +96,31 @@ void unchecked_uninit_fill(ForwardIter first, ForwardIter last, const T& value, 
     for (; cur != last; ++cur) {
       yastl::construct(&*cur, value);
     }
-  }
-  catch (...) {
+  } catch (...) {
     for (;first != cur; ++first) {
       yastl::destroy(&*first);
     }
   }
 }
 
+// 在 [first, last) 区间内填充元素值
 template <class ForwardIter, class T>
 void uninitialized_fill(ForwardIter first, ForwardIter last, const T& value) {
   yastl::unchecked_uninit_fill(first, last, value, 
                                std::is_trivially_copy_assignable<
-                               typename iterator_traits<ForwardIter>::
-                               value_type>{});
+                               typename iterator_traits<ForwardIter>::value_type>{});
 }
 
 /*****************************************************************************************/
 // uninitialized_fill_n
 // 从 first 位置开始，填充 n 个元素值，返回填充结束的位置
 /*****************************************************************************************/
+// 构造函数重要版本
 template <class ForwardIter, class Size, class T>
 ForwardIter unchecked_uninit_fill_n(ForwardIter first, Size n, const T& value, std::true_type) {
   return yastl::fill_n(first, n, value);
 }
-
+// 构造函数不重要版本
 template <class ForwardIter, class Size, class T>
 ForwardIter unchecked_uninit_fill_n(ForwardIter first, Size n, const T& value, std::false_type) {
   auto cur = first;
@@ -128,8 +128,7 @@ ForwardIter unchecked_uninit_fill_n(ForwardIter first, Size n, const T& value, s
     for (; n > 0; --n, ++cur) {
       yastl::construct(&*cur, value);
     }
-  }
-  catch (...) {
+  } catch (...) {
     for (; first != cur; ++first) {
       yastl::destroy(&*first);
     }
@@ -149,11 +148,12 @@ ForwardIter uninitialized_fill_n(ForwardIter first, Size n, const T& value) {
 // uninitialized_move
 // 把[first, last)上的内容移动到以 result 为起始处的空间，返回移动结束的位置
 /*****************************************************************************************/
+// 不需要调用移动构造函数版本
 template <class InputIter, class ForwardIter>
 ForwardIter unchecked_uninit_move(InputIter first, InputIter last, ForwardIter result, std::true_type) {
   return yastl::move(first, last, result); // 可以直接移动
 }
-
+// 需要调用移动构造函数版本
 template <class InputIter, class ForwardIter>
 ForwardIter unchecked_uninit_move(InputIter first, InputIter last, ForwardIter result, std::false_type) {
   ForwardIter cur = result;
@@ -161,8 +161,7 @@ ForwardIter unchecked_uninit_move(InputIter first, InputIter last, ForwardIter r
     for (; first != last; ++first, ++cur) {
       yastl::construct(&*cur, yastl::move(*first)); // 批量调用移动构造函数
     }
-  }
-  catch (...) {
+  } catch (...) {
     yastl::destroy(result, cur);
   }
   return cur;
@@ -181,20 +180,20 @@ ForwardIter uninitialized_move(InputIter first, InputIter last, ForwardIter resu
 // uninitialized_move_n
 // 把[first, first + n)上的内容移动到以 result 为起始处的空间，返回移动结束的位置
 /*****************************************************************************************/
+// 不需要调用移动构造函数版本
 template <class InputIter, class Size, class ForwardIter>
 ForwardIter unchecked_uninit_move_n(InputIter first, Size n, ForwardIter result, std::true_type) {
   return yastl::move(first, first + n, result);
 }
-
+// 需要调用移动构造函数版本
 template <class InputIter, class Size, class ForwardIter>
 ForwardIter unchecked_uninit_move_n(InputIter first, Size n, ForwardIter result, std::false_type) {
   auto cur = result;
   try {
     for (; n > 0; --n, ++first, ++cur) {
-      yastl::construct(&*cur, yastl::move(*first));
+      yastl::construct(&*cur, yastl::move(*first)); // 调用移动构造函数
     }
-  }
-  catch (...) {
+  } catch (...) {
     for (; result != cur; ++result) {
       yastl::destroy(&*result);
     }
@@ -202,13 +201,12 @@ ForwardIter unchecked_uninit_move_n(InputIter first, Size n, ForwardIter result,
   }
   return cur;
 }
-
+// 把[first, first + n)上的内容移动到以 result 为起始处的空间，返回移动结束的位置
 template <class InputIter, class Size, class ForwardIter>
 ForwardIter uninitialized_move_n(InputIter first, Size n, ForwardIter result) {
   return yastl::unchecked_uninit_move_n(first, n, result,
                                         std::is_trivially_move_assignable<
-                                        typename iterator_traits<InputIter>::
-                                        value_type>{});
+                                        typename iterator_traits<InputIter>::value_type>{});
 }
 } // namespace yastl
 #endif // _INCLUDE_UNINITIALIZED_H_

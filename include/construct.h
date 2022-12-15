@@ -16,42 +16,38 @@ namespace yastl
 // construct 构造对象
 
 template <class Ty>
-void construct(Ty* ptr)
-{
+void construct(Ty* ptr) {
   ::new ((void*)ptr) Ty(); // placement new 在已经分配好空间的内存中创建对象Ty，ptr为内存地址
 }
 
 template <class Ty1, class Ty2>
-void construct(Ty1* ptr, const Ty2& value)
-{
+void construct(Ty1* ptr, const Ty2& value) {
   ::new ((void*)ptr) Ty1(value);
 }
 
 template <class Ty, class... Args>
-void construct(Ty* ptr, Args&&... args)
-{
+void construct(Ty* ptr, Args&&... args) {
   ::new ((void*)ptr) Ty(yastl::forward<Args>(args)...);
 }
 
 // destroy 将对象析构
-
+// 一个迭代器析构函数不重要 true type
 template <class Ty>
-void destroy_one(Ty*, std::true_type) {} // 一个迭代器析构函数不重要 true type
-
+void destroy_one(Ty*, std::true_type) {} 
+// 析构函数重要 要调用 false type
 template <class Ty>
-void destroy_one(Ty* pointer, std::false_type) // 析构函数重要 要调用 false type
-{
-  if (pointer != nullptr)
-  {
+void destroy_one(Ty* pointer, std::false_type) {
+  if (pointer != nullptr) {
     pointer->~Ty();
   }
 }
 
+// 一堆迭代器 析构函数不重要 true type
 template <class ForwardIter>
-void destroy_cat(ForwardIter , ForwardIter , std::true_type) {} // 一堆迭代器 析构函数不重要 true type
-
+void destroy_cat(ForwardIter , ForwardIter , std::true_type) {}
+// 一堆迭代器 析构函数重要 要调用 false type
 template <class ForwardIter>
-void destroy_cat(ForwardIter first, ForwardIter last, std::false_type) { // 一堆迭代器 析构函数重要 要调用 false type
+void destroy_cat(ForwardIter first, ForwardIter last, std::false_type) {
   for (; first != last; ++first) {
     destroy(&*first);
   }

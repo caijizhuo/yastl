@@ -41,10 +41,8 @@ const T& max(const T& lhs, const T& rhs, Compare comp)
 /*****************************************************************************************/
 // min 
 // 取二者中的较小值，语义相等时保证返回第一个参数
-/*****************************************************************************************/
 template <class T>
-const T& min(const T& lhs, const T& rhs)
-{
+const T& min(const T& lhs, const T& rhs) {
   return rhs < lhs ? rhs : lhs;
 }
 
@@ -58,11 +56,9 @@ const T& min(const T& lhs, const T& rhs, Compare comp)
 /*****************************************************************************************/
 // iter_swap
 // 将两个迭代器所指对象对调
-/*****************************************************************************************/
 template <class FIter1, class FIter2>
-void iter_swap(FIter1 lhs, FIter2 rhs)
-{
-  yastl::swap(*lhs, *rhs);
+void iter_swap(FIter1 lhs, FIter2 rhs) {
+  yastl::swap(*lhs, *rhs); // 这里交换的不是迭代器，是对象，函数内使用了引用
 }
 
 /*****************************************************************************************/
@@ -334,12 +330,9 @@ BidirectionalIter2 move_backward(BidirectionalIter1 first, BidirectionalIter1 la
 /*****************************************************************************************/
 // equal
 // 比较第一序列在 [first, last)区间上的元素值是否和第二序列相等
-/*****************************************************************************************/
 template <class InputIter1, class InputIter2>
-bool equal(InputIter1 first1, InputIter1 last1, InputIter2 first2)
-{
-  for (; first1 != last1; ++first1, ++first2)
-  {
+bool equal(InputIter1 first1, InputIter1 last1, InputIter2 first2) {
+  for (; first1 != last1; ++first1, ++first2) {
     if (*first1 != *first2)  
       return false;
   }
@@ -363,10 +356,8 @@ bool equal(InputIter1 first1, InputIter1 last1, InputIter2 first2, Compared comp
 // 从 first 位置开始填充 n 个值
 /*****************************************************************************************/
 template <class OutputIter, class Size, class T>
-OutputIter unchecked_fill_n(OutputIter first, Size n, const T& value)
-{
-  for (; n > 0; --n, ++first)
-  {
+OutputIter unchecked_fill_n(OutputIter first, Size n, const T& value) {
+  for (; n > 0; --n, ++first) {
     *first = value;
   }
   return first;
@@ -388,9 +379,9 @@ unchecked_fill_n(Tp* first, Size n, Up value)
   return first + n;
 }
 
+// 从 first 位置开始填充 n 个值
 template <class OutputIter, class Size, class T>
-OutputIter fill_n(OutputIter first, Size n, const T& value)
-{
+OutputIter fill_n(OutputIter first, Size n, const T& value) {
   return unchecked_fill_n(first, n, value);
 }
 
@@ -398,26 +389,22 @@ OutputIter fill_n(OutputIter first, Size n, const T& value)
 // fill
 // 为 [first, last)区间内的所有元素填充新值
 /*****************************************************************************************/
+// 给forward iter准备的填充[first, last)为value
 template <class ForwardIter, class T>
-void fill_cat(ForwardIter first, ForwardIter last, const T& value,
-              yastl::forward_iterator_tag)
-{
-  for (; first != last; ++first)
-  {
+void fill_cat(ForwardIter first, ForwardIter last, const T& value, yastl::forward_iterator_tag) {
+  for (; first != last; ++first) {
     *first = value;
   }
 }
-
+// random access iter准备的填充[first, last)为value
 template <class RandomIter, class T>
-void fill_cat(RandomIter first, RandomIter last, const T& value,
-              yastl::random_access_iterator_tag)
-{
+void fill_cat(RandomIter first, RandomIter last, const T& value, yastl::random_access_iterator_tag) {
   fill_n(first, last - first, value);
 }
 
+// 为 [first, last)区间内的所有元素填充新值
 template <class ForwardIter, class T>
-void fill(ForwardIter first, ForwardIter last, const T& value)
-{
+void fill(ForwardIter first, ForwardIter last, const T& value) {
   fill_cat(first, last, value, iterator_category(first));
 }
 
@@ -428,7 +415,6 @@ void fill(ForwardIter first, ForwardIter last, const T& value)
 // (2)如果到达 last1 而尚未到达 last2 返回 true
 // (3)如果到达 last2 而尚未到达 last1 返回 false
 // (4)如果同时到达 last1 和 last2 返回 false
-/*****************************************************************************************/
 template <class InputIter1, class InputIter2>
 bool lexicographical_compare(InputIter1 first1, InputIter1 last1,
                              InputIter2 first2, InputIter2 last2)
@@ -458,12 +444,9 @@ bool lexicographical_compare(InputIter1 first1, InputIter1 last1,
   return first1 == last1 && first2 != last2;
 }
 
-// 针对 const unsigned char* 的特化版本
-bool lexicographical_compare(const unsigned char* first1,
-                             const unsigned char* last1,
-                             const unsigned char* first2,
-                             const unsigned char* last2)
-{
+// 针对 const unsigned char* 的特化版本 字典序比较两个序列
+bool lexicographical_compare(const unsigned char* first1, const unsigned char* last1,
+                             const unsigned char* first2, const unsigned char* last2) {
   const auto len1 = last1 - first1;
   const auto len2 = last2 - first2;
   // 先比较相同长度的部分

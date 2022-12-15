@@ -11,7 +11,7 @@ namespace yastl
 {
 
 // move
-
+// 等同于std::move  static_cast<T&&>(lvalue) 对左值做类型转换成右值
 template <class T>
 typename std::remove_reference<T>::type&& move(T&& arg) noexcept {
   return static_cast<typename std::remove_reference<T>::type&&>(arg); // 就是一个模板类，引用移除
@@ -35,10 +35,10 @@ T&& forward(typename std::remove_reference<T>::type&& arg) noexcept
 // swap
 // 交换两个类型的东西
 template <class Tp>
-void swap(Tp& lhs, Tp& rhs) {
-  auto tmp(yastl::move(lhs));
-  lhs = yastl::move(rhs);
-  rhs = yastl::move(tmp);
+void swap(Tp& lhs, Tp& rhs) { // 使用引用来保证交换
+  auto tmp(std::move(lhs)); //尝试使用std move，原版为yastl::move
+  lhs = std::move(rhs);
+  rhs = std::move(tmp);
 }
 
 template <class ForwardIter1, class ForwardIter2>

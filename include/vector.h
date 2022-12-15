@@ -293,43 +293,46 @@ public:
   }
   void resize(size_type new_size, const value_type& value);
 
-  void     reverse() { yastl::reverse(begin(), end()); }
+  // 反转当前vector
+  void reverse() {
+    yastl::reverse(begin(), end());
+  }
 
-  // swap
-  void     swap(vector& rhs) noexcept;
+  // swap 当前vector和某个vector做交换
+  void swap(vector& rhs) noexcept;
 
 private:
   // helper functions
 
-  // initialize / destroy
-  void      try_init() noexcept;
+  // initialize / destroy 尝试初始化16个cap的元素
+  void try_init() noexcept;
+  // 尝试初始化size和cap的函数
+  void init_space(size_type size, size_type cap);
 
-  void      init_space(size_type size, size_type cap);
-
-  void      fill_init(size_type n, const value_type& value);
+  void fill_init(size_type n, const value_type& value);
   template <class Iter>
-  void      range_init(Iter first, Iter last);
+  void range_init(Iter first, Iter last);
 
-  void      destroy_and_recover(iterator first, iterator last, size_type n);
+  void destroy_and_recover(iterator first, iterator last, size_type n);
 
   // calculate the growth size 获得应该变成的大小数
   size_type get_new_cap(size_type add_size);
 
   // assign
-
-  void      fill_assign(size_type n, const value_type& value);
+  // 和init的区别是，那个是初始化用的，而此函数在已初始化的vector调用
+  void fill_assign(size_type n, const value_type& value);
 
   template <class IIter>
-  void      copy_assign(IIter first, IIter last, input_iterator_tag);
+  void copy_assign(IIter first, IIter last, input_iterator_tag);
 
   template <class FIter>
-  void      copy_assign(FIter first, FIter last, forward_iterator_tag);
+  void copy_assign(FIter first, FIter last, forward_iterator_tag);
 
   // reallocate
 
   template <class... Args>
-  void      reallocate_emplace(iterator pos, Args&& ...args);
-  void      reallocate_insert(iterator pos, const value_type& value);
+  void reallocate_emplace(iterator pos, Args&& ...args);
+  void reallocate_insert(iterator pos, const value_type& value);
 
   // insert
 
@@ -339,31 +342,25 @@ private:
 
   // shrink_to_fit
 
-  void      reinsert(size_type size);
+  void reinsert(size_type size);
 };
 
 /*****************************************************************************************/
 
 // 复制赋值操作符
 template <class T>
-vector<T>& vector<T>::operator=(const vector& rhs)
-{
-  if (this != &rhs)
-  {
+vector<T>& vector<T>::operator=(const vector& rhs) {
+  std::cout << "call copy = in vector!" << std::endl;
+  if (this != &rhs) {
     const auto len = rhs.size();
-    if (len > capacity())
-    { 
-      vector tmp(rhs.begin(), rhs.end());
+    if (len > capacity()) { // 需要扩容cap
+      vector tmp(rhs.begin(), rhs.end()); // 构造临时对象，避免覆盖rhs
       swap(tmp);
-    }
-    else if (size() >= len)
-    {
+    } else if (size() >= len) { // size就能装下
       auto i = yastl::copy(rhs.begin(), rhs.end(), begin());
       data_allocator::destroy(i, end_);
       end_ = begin_ + len;
-    }
-    else
-    { 
+    } else {  // 需要扩充size，并且把cap缩成和size一样，避免空间浪费
       yastl::copy(rhs.begin(), rhs.begin() + size(), begin_);
       yastl::uninitialized_copy(rhs.begin() + size(), rhs.end(), end_);
       cap_ = end_ = begin_ + len;
@@ -372,10 +369,10 @@ vector<T>& vector<T>::operator=(const vector& rhs)
   return *this;
 }
 
-// 移动赋值操作符
+// 移动赋值操作符,当rhs为右值时使用，直接占据rhs
 template <class T>
-vector<T>& vector<T>::operator=(vector&& rhs) noexcept
-{
+vector<T>& vector<T>::operator=(vector&& rhs) noexcept {
+  std::cout << "call move = in vector!" << std::endl;
   destroy_and_recover(begin_, end_, cap_ - begin_);
   begin_ = rhs.begin_;
   end_ = rhs.end_;
@@ -534,36 +531,28 @@ void vector<T>::swap(vector<T>& rhs) noexcept {
 /*****************************************************************************************/
 // helper function
 
-// try_init 函数，若分配失败则忽略，不抛出异常
+// try_init 函数，若分配失败则忽略，不抛出异常。尝试初始化16个cap的元素
 template <class T>
-void vector<T>::try_init() noexcept
-{
-  try
-  {
+void vector<T>::try_init() noexcept {
+  try {
     begin_ = data_allocator::allocate(16);
     end_ = begin_;
     cap_ = begin_ + 16;
-  }
-  catch (...)
-  {
+  } catch (...) {
     begin_ = nullptr;
     end_ = nullptr;
     cap_ = nullptr;
   }
 }
 
-// init_space 函数
+// init_space 函数，尝试初始化size和cap的函数
 template <class T>
-void vector<T>::init_space(size_type size, size_type cap)
-{
-  try
-  {
+void vector<T>::init_space(size_type size, size_type cap) {
+  try {
     begin_ = data_allocator::allocate(cap);
     end_ = begin_ + size;
     cap_ = begin_ + cap;
-  }
-  catch (...)
-  {
+  } catch (...) {
     begin_ = nullptr;
     end_ = nullptr;
     cap_ = nullptr;
@@ -571,22 +560,18 @@ void vector<T>::init_space(size_type size, size_type cap)
   }
 }
 
-// fill_init 函数
+// fill_init 函数, 初始化n个value
 template <class T>
-void vector<T>::
-fill_init(size_type n, const value_type& value)
-{
+void vector<T>::fill_init(size_type n, const value_type& value) {
   const size_type init_size = yastl::max(static_cast<size_type>(16), n);
   init_space(n, init_size);
   yastl::uninitialized_fill_n(begin_, n, value);
 }
 
-// range_init 函数
+// range_init 函数,用[first, last)来拷贝构造初始化当前vector
 template <class T>
 template <class Iter>
-void vector<T>::
-range_init(Iter first, Iter last)
-{
+void vector<T>::range_init(Iter first, Iter last) {
   const size_type init_size = yastl::max(static_cast<size_type>(last - first),
                                          static_cast<size_type>(16));
   init_space(static_cast<size_type>(last - first), init_size);
@@ -631,13 +616,13 @@ void vector<T>::fill_assign(size_type n, const value_type& value) {
   }
 }
 
-// copy_assign 函数
+// copy_assign 函数，拷贝构造[first, last)范围内元素到当前vector
 template <class T>
 template <class IIter>
 void vector<T>::copy_assign(IIter first, IIter last, input_iterator_tag) {
   auto cur = begin_;
   for (; first != last && cur != end_; ++first, ++cur) { // 当前不到末尾并且目标也没到尾部
-    *cur = *first;
+    *cur = *first; // input iterator tag 顺序读取
   }
   if (first == last) { // 目标先到尾部，把当前到最后都给删了
     erase(cur, end_);
@@ -649,22 +634,16 @@ void vector<T>::copy_assign(IIter first, IIter last, input_iterator_tag) {
 // 用 [first, last) 为容器赋值
 template <class T>
 template <class FIter>
-void vector<T>::copy_assign(FIter first, FIter last, forward_iterator_tag)
-{
+void vector<T>::copy_assign(FIter first, FIter last, forward_iterator_tag) {
   const size_type len = yastl::distance(first, last);
-  if (len > capacity())
-  {
-    vector tmp(first, last);
+  if (len > capacity()) { // 目标长度大于当前cap
+    vector tmp(first, last); // 新建一个vector，不要影响之前的
     swap(tmp);
-  }
-  else if (size() >= len)
-  {
+  } else if (size() >= len) { // 当前size已经可以容纳
     auto new_end = yastl::copy(first, last, begin_);
     data_allocator::destroy(new_end, end_);
     end_ = new_end;
-  }
-  else
-  {
+  } else { // size容不下但是cap可以
     auto mid = first;
     yastl::advance(mid, size());
     yastl::copy(first, mid, begin_);
@@ -802,14 +781,13 @@ void vector<T>::copy_insert(iterator pos, IIter first, IIter last) {
   }
 }
 
-// reinsert 函数
+// reinsert 函数 新开一块size大小的空间，并把当前内容挪过去
 template <class T>
 void vector<T>::reinsert(size_type size) {
   auto new_begin = data_allocator::allocate(size);
   try {
     yastl::uninitialized_move(begin_, end_, new_begin);
-  }
-  catch (...) {
+  } catch (...) {
     data_allocator::deallocate(new_begin, size);
     throw;
   }
@@ -823,39 +801,33 @@ void vector<T>::reinsert(size_type size) {
 // 重载比较操作符
 
 template <class T>
-bool operator==(const vector<T>& lhs, const vector<T>& rhs)
-{
-  return lhs.size() == rhs.size() &&
-    yastl::equal(lhs.begin(), lhs.end(), rhs.begin());
+bool operator==(const vector<T>& lhs, const vector<T>& rhs) {
+  return lhs.size() == rhs.size() && yastl::equal(lhs.begin(), lhs.end(), rhs.begin());
 }
 
 template <class T>
-bool operator<(const vector<T>& lhs, const vector<T>& rhs)
-{
+bool operator<(const vector<T>& lhs, const vector<T>& rhs) {
   return yastl::lexicographical_compare(lhs.begin(), lhs.end(), rhs.begin(), lhs.end());
 }
 
+// 判断内容是否相等
 template <class T>
-bool operator!=(const vector<T>& lhs, const vector<T>& rhs)
-{
+bool operator!=(const vector<T>& lhs, const vector<T>& rhs) {
   return !(lhs == rhs);
 }
 
 template <class T>
-bool operator>(const vector<T>& lhs, const vector<T>& rhs)
-{
+bool operator>(const vector<T>& lhs, const vector<T>& rhs) {
   return rhs < lhs;
 }
 
 template <class T>
-bool operator<=(const vector<T>& lhs, const vector<T>& rhs)
-{
+bool operator<=(const vector<T>& lhs, const vector<T>& rhs) {
   return !(rhs < lhs);
 }
 
 template <class T>
-bool operator>=(const vector<T>& lhs, const vector<T>& rhs)
-{
+bool operator>=(const vector<T>& lhs, const vector<T>& rhs) {
   return !(lhs < rhs);
 }
 

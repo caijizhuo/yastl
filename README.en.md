@@ -7,14 +7,15 @@ Yet another STL for learning.
 .
 ├── algobase.h
 ├── algo.h
-├── allocator.h         分配器文件，预先定义的接口  100%
-├── construct.h         对象的构造和析构           100%
-├── exceptdef.h         调试宏文件                 100%
+├── allocator.h         分配器文件，预先定义的接口                   100%
+├── construct.h         对象的构造和析构                            100%
+├── exceptdef.h         调试宏文件                                  100%
 ├── functional.h
 ├── heap_algo.h
-├── iterator.h          迭代器的定义                 100%
-├── memory.h            一些高级内存管理函数           0%
-├── type_traits.h       偏特化头文件以及pair判断    100%
-├── uninitialized.h     对未初始化的空间进行构造元素  100%
-├── util.h              给uninitialized.h使用的工具   10%
-└── vector.h            vector实现                  40%
+├── iterator.h          迭代器的定义                                100%
+├── list.h              list实现                                      0%
+├── memory.h            一些高级内存管理函数，似乎没用上               N/A
+├── type_traits.h       偏特化头文件以及pair判断                     100%
+├── uninitialized.h     对未初始化的空间进行构造元素                 100%
+├── util.h              给uninitialized.h使用的工具                  10%
+└── vector.h            vector实现                                  100%

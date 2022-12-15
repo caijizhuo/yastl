@@ -1367,29 +1367,26 @@ void replace_if(ForwardIter first, ForwardIter last,
 /*****************************************************************************************/
 // reverse_dispatch 的 bidirectional_iterator_tag 版本
 template <class BidirectionalIter>
-void reverse_dispatch(BidirectionalIter first, BidirectionalIter last,
-                      bidirectional_iterator_tag)
-{
-  while (true)
-  {
-    if (first == last || first == --last)
+void reverse_dispatch(BidirectionalIter first, BidirectionalIter last, bidirectional_iterator_tag) {
+  while (true) {
+    if (first == last || first == --last) { // 双向迭代器无法使用 < 比较
       return;
+    }
     yastl::iter_swap(first++, last);
   }
 }
 
 // reverse_dispatch 的 random_access_iterator_tag 版本
 template <class RandomIter>
-void reverse_dispatch(RandomIter first, RandomIter last,
-                      random_access_iterator_tag)
-{
-  while (first < last)
+void reverse_dispatch(RandomIter first, RandomIter last, random_access_iterator_tag) {
+  while (first < last) {
     yastl::iter_swap(first++, --last);
+  }
 }
 
+// 反转迭代器之间的内容，仅限bidirectional迭代器及其子类
 template <class BidirectionalIter>
-void reverse(BidirectionalIter first, BidirectionalIter last)
-{
+void reverse(BidirectionalIter first, BidirectionalIter last) {
   yastl::reverse_dispatch(first, last, iterator_category(first));
 }
 
