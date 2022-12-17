@@ -47,23 +47,29 @@ struct list_node_base {
   base_ptr next;  // 下一节点
 
   list_node_base() = default;
-
-  node_ptr as_node()
-  {
+  // 转换成node类型的指针
+  node_ptr as_node() {
     return static_cast<node_ptr>(self());
   }
 
-  void unlink()
-  {
+  // prev = next = self() 让这个节点脱离出来
+  void unlink() {
     prev = next = self();
   }
 
-  base_ptr self()
-  {
-    return static_cast<base_ptr>(&*this);
+  // 返回自己的指针
+  base_ptr self() {
+    return static_cast<base_ptr>(this);
   }
 };
 
+// =========
+// | prev  |
+// =========
+// | next  |
+// =========
+// | value |
+// =========
 template <class T>
 struct list_node : public list_node_base<T> {
   typedef typename node_traits<T>::base_ptr base_ptr;
@@ -72,218 +78,228 @@ struct list_node : public list_node_base<T> {
   T value;  // 数据域
 
   list_node() = default;
+  // 拷贝构造
   list_node(const T& v) : value(v) {}
+  // 移动构造
   list_node(T&& v) : value(yastl::move(v)) {}
-
+  // 转换成base类型的指针
   base_ptr as_base() {
-    return static_cast<base_ptr>(&*this);
+    return static_cast<base_ptr>(this);
   }
+  // 返回自己的指针
   node_ptr self() {
-    return static_cast<node_ptr>(&*this);
+    return static_cast<node_ptr>(this);
   }
 };
 
-// list 的迭代器设计
+// list 的迭代器设计,链表不像vector，需要自己设计迭代器
 template <class T>
-struct list_iterator : public yastl::iterator<yastl::bidirectional_iterator_tag, T>
-{
-  typedef T                                 value_type;
-  typedef T*                                pointer;
-  typedef T&                                reference;
+struct list_iterator : public yastl::iterator<yastl::bidirectional_iterator_tag, T> {
+  typedef T value_type;
+  typedef T* pointer;
+  typedef T& reference;
   typedef typename node_traits<T>::base_ptr base_ptr;
   typedef typename node_traits<T>::node_ptr node_ptr;
-  typedef list_iterator<T>                  self;
+
+  // 当前迭代器类型
+  typedef list_iterator<T> self;
 
   base_ptr node_;  // 指向当前节点
 
-  // 构造函数
+  // 构造函数，给当前节点指针赋值
   list_iterator() = default;
-  list_iterator(base_ptr x)
-    :node_(x) {}
-  list_iterator(node_ptr x)
-    :node_(x->as_base()) {}
-  list_iterator(const list_iterator& rhs)
-    :node_(rhs.node_) {}
+  list_iterator(base_ptr x) : node_(x) {}
+  list_iterator(node_ptr x) : node_(x->as_base()) {}
+  // 拷贝构造
+  list_iterator(const list_iterator& rhs) : node_(rhs.node_) {}
 
   // 重载操作符
-  reference operator*()  const { return node_->as_node()->value; }
-  pointer   operator->() const { return &(operator*()); }
-
-  self& operator++()
-  {
+  reference operator*() const {
+    return node_->as_node()->value;
+  }
+  // 返回value地址
+  pointer operator->() const {
+    return &(operator*());
+  }
+  // 返回下一个节点的引用
+  self& operator++() {
     YASTL_DEBUG(node_ != nullptr);
     node_ = node_->next;
     return *this;
   }
-  self operator++(int)
-  {
+  // 返回下一个节点的拷贝
+  self operator++(int) {
     self tmp = *this;
     ++*this;
     return tmp;
   }
-  self& operator--()
-  {
+  // 返回上一个节点的引用
+  self& operator--() {
     YASTL_DEBUG(node_ != nullptr);
     node_ = node_->prev;
     return *this;
   }
-  self operator--(int)
-  {
+  // 返回上一个节点的拷贝
+  self operator--(int) {
     self tmp = *this;
     --*this;
     return tmp;
   }
 
   // 重载比较操作符
-  bool operator==(const self& rhs) const { return node_ == rhs.node_; }
-  bool operator!=(const self& rhs) const { return node_ != rhs.node_; }
+  bool operator==(const self& rhs) const {
+    return node_ == rhs.node_;
+  }
+  bool operator!=(const self& rhs) const {
+    return node_ != rhs.node_;
+  }
 };
 
 template <class T>
-struct list_const_iterator : public iterator<bidirectional_iterator_tag, T>
-{
-  typedef T                                 value_type;
-  typedef const T*                          pointer;
-  typedef const T&                          reference;
+struct list_const_iterator : public iterator<bidirectional_iterator_tag, T> {
+  typedef T value_type;
+  typedef const T* pointer;
+  typedef const T& reference;
   typedef typename node_traits<T>::base_ptr base_ptr;
   typedef typename node_traits<T>::node_ptr node_ptr;
-  typedef list_const_iterator<T>            self;
+  typedef list_const_iterator<T> self;
 
   base_ptr node_;
 
   list_const_iterator() = default;
-  list_const_iterator(base_ptr x)
-    :node_(x) {}
-  list_const_iterator(node_ptr x)
-    :node_(x->as_base()) {}
-  list_const_iterator(const list_iterator<T>& rhs)
-    :node_(rhs.node_) {}
-  list_const_iterator(const list_const_iterator& rhs)
-    :node_(rhs.node_) {}
+  list_const_iterator(base_ptr x) : node_(x) {}
+  list_const_iterator(node_ptr x) : node_(x->as_base()) {}
+  list_const_iterator(const list_iterator<T>& rhs) : node_(rhs.node_) {}
+  list_const_iterator(const list_const_iterator& rhs) : node_(rhs.node_) {}
 
-  reference operator*()  const { return node_->as_node()->value; }
-  pointer   operator->() const { return &(operator*()); }
+  reference operator*() const {
+    return node_->as_node()->value;
+  }
+  pointer operator->() const {
+    return &(operator*());
+  }
 
-  self& operator++()
-  {
+  self& operator++() {
     YASTL_DEBUG(node_ != nullptr);
     node_ = node_->next;
     return *this;
   }
-  self operator++(int)
-  {
+  self operator++(int) {
     self tmp = *this;
     ++*this;
     return tmp;
   }
-  self& operator--()
-  {
+  self& operator--() {
     YASTL_DEBUG(node_ != nullptr);
     node_ = node_->prev;
     return *this;
   }
-  self operator--(int)
-  {
+  self operator--(int) {
     self tmp = *this;
     --*this;
     return tmp;
   }
 
   // 重载比较操作符
-  bool operator==(const self& rhs) const { return node_ == rhs.node_; }
-  bool operator!=(const self& rhs) const { return node_ != rhs.node_; }
+  bool operator==(const self& rhs) const {
+    return node_ == rhs.node_;
+  }
+  bool operator!=(const self& rhs) const {
+    return node_ != rhs.node_;
+  }
 };
 
 // 模板类: list
 // 模板参数 T 代表数据类型
 template <class T>
-class list
-{
+class list {
 public:
   // list 的嵌套型别定义
-  typedef yastl::allocator<T>                      allocator_type;
-  typedef yastl::allocator<T>                      data_allocator;
-  typedef yastl::allocator<list_node_base<T>>      base_allocator;
-  typedef yastl::allocator<list_node<T>>           node_allocator;
+  typedef yastl::allocator<T> allocator_type;
+  typedef yastl::allocator<T> data_allocator;
+  typedef yastl::allocator<list_node_base<T>> base_allocator;
+  typedef yastl::allocator<list_node<T>> node_allocator;
 
-  typedef typename allocator_type::value_type      value_type;
-  typedef typename allocator_type::pointer         pointer;
-  typedef typename allocator_type::const_pointer   const_pointer;
-  typedef typename allocator_type::reference       reference;
+  typedef typename allocator_type::value_type value_type;
+  typedef typename allocator_type::pointer pointer;
+  typedef typename allocator_type::const_pointer const_pointer;
+  typedef typename allocator_type::reference reference;
   typedef typename allocator_type::const_reference const_reference;
-  typedef typename allocator_type::size_type       size_type;
+  typedef typename allocator_type::size_type size_type;
   typedef typename allocator_type::difference_type difference_type;
 
-  typedef list_iterator<T>                         iterator;
-  typedef list_const_iterator<T>                   const_iterator;
-  typedef yastl::reverse_iterator<iterator>        reverse_iterator;
-  typedef yastl::reverse_iterator<const_iterator>  const_reverse_iterator;
+  typedef list_iterator<T> iterator;
+  typedef list_const_iterator<T> const_iterator;
+  typedef yastl::reverse_iterator<iterator> reverse_iterator;
+  typedef yastl::reverse_iterator<const_iterator> const_reverse_iterator;
 
-  typedef typename node_traits<T>::base_ptr        base_ptr;
-  typedef typename node_traits<T>::node_ptr        node_ptr;
+  typedef typename node_traits<T>::base_ptr base_ptr;
+  typedef typename node_traits<T>::node_ptr node_ptr;
 
-  allocator_type get_allocator() { return node_allocator(); }
+  allocator_type get_allocator() {
+    return node_allocator();
+  }
 
 private:
-  base_ptr  node_;  // 指向末尾节点
-  size_type size_;  // 大小
+  // 指向末尾节点
+  base_ptr node_;
+  // 大小
+  size_type size_;
 
 public:
   // 构造、复制、移动、析构函数
-  list() 
-  { fill_init(0, value_type()); }
+  // 构造一个空的容器
+  list() {
+    fill_init(0, value_type());
+  }
+  // 初始化n个列表
+  explicit list(size_type n) {
+    fill_init(n, value_type());
+  }
+  // 初始化n个value的列表
+  list(size_type n, const T& value) {
+    fill_init(n, value);
+  }
+  // 用迭代器初始化list
+  template <class Iter, typename std::enable_if<yastl::is_input_iterator<Iter>::value, int>::type = 0>
+  list(Iter first, Iter last) {
+    copy_init(first, last);
+  }
 
-  explicit list(size_type n) 
-  { fill_init(n, value_type()); }
-
-  list(size_type n, const T& value)
-  { fill_init(n, value); }
-
-  template <class Iter, typename std::enable_if<
-    yastl::is_input_iterator<Iter>::value, int>::type = 0>
-  list(Iter first, Iter last)
-  { copy_init(first, last); }
-
-  list(std::initializer_list<T> ilist)
-  { copy_init(ilist.begin(), ilist.end()); }
-
-  list(const list& rhs)
-  { copy_init(rhs.cbegin(), rhs.cend()); }
-
-  list(list&& rhs) noexcept
-    :node_(rhs.node_), size_(rhs.size_)
-  {
+  list(std::initializer_list<T> ilist) {
+    copy_init(ilist.begin(), ilist.end());
+  }
+  // 拷贝构造函数
+  list(const list& rhs) {
+    copy_init(rhs.cbegin(), rhs.cend());
+  }
+  // 移动构造，直接把rhs的内容拿来用，并防止double free
+  list(list&& rhs) noexcept : node_(rhs.node_), size_(rhs.size_) {
     rhs.node_ = nullptr;
     rhs.size_ = 0;
   }
-
-  list& operator=(const list& rhs)
-  {
-    if (this != &rhs)
-    {
+  // 赋值运算
+  list& operator=(const list& rhs) {
+    if (this != &rhs) {
       assign(rhs.begin(), rhs.end());
     }
     return *this;
   }
 
-  list& operator=(list&& rhs) noexcept
-  {
+  list& operator=(list&& rhs) noexcept {
     clear();
-    splice(end(), rhs);
+    splice(end(), rhs); // 右值赋值，直接拼接
     return *this;
   }
 
-  list& operator=(std::initializer_list<T> ilist)
-  {
+  list& operator=(std::initializer_list<T> ilist) {
     list tmp(ilist.begin(), ilist.end());
-    swap(tmp);
+    swap(tmp); // 和临时对象交换赋值
     return *this;
   }
 
-  ~list()
-  {
-    if (node_)
-    {
+  ~list() {
+    if (node_) {
       clear();
       base_allocator::deallocate(node_);
       node_ = nullptr;
@@ -562,7 +578,7 @@ private:
   template <class Compared>
   iterator  list_sort(iterator first, iterator last, size_type n, Compared comp);
 
-};
+}; // list end
 
 /*****************************************************************************************/
 
@@ -810,11 +826,9 @@ void list<T>::reverse()
 template <class T>
 template <class ...Args>
 typename list<T>::node_ptr 
-list<T>::create_node(Args&& ...args)
-{
+list<T>::create_node(Args&& ...args) {
   node_ptr p = node_allocator::allocate(1);
-  try
-  {
+  try {
     data_allocator::construct(yastl::address_of(p->value), yastl::forward<Args>(args)...);
     p->prev = nullptr;
     p->next = nullptr;
@@ -837,15 +851,12 @@ void list<T>::destroy_node(node_ptr p)
 
 // 用 n 个元素初始化容器
 template <class T>
-void list<T>::fill_init(size_type n, const value_type& value)
-{
+void list<T>::fill_init(size_type n, const value_type& value) {
   node_ = base_allocator::allocate(1);
   node_->unlink();
   size_ = n;
-  try
-  {
-    for (; n > 0; --n)
-    {
+  try {
+    for (; n > 0; --n) {
       auto node = create_node(value);
       link_nodes_at_back(node->as_base(), node->as_base());
     }

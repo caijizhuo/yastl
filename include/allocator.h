@@ -10,8 +10,7 @@ namespace yastl {
 // 模板类：allocator
 // 模板函数代表数据类型
 template <class T>
-class allocator
-{
+class allocator {
 public:
   typedef T value_type;
   typedef T* pointer;

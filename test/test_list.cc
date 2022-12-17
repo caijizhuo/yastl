@@ -14,6 +14,8 @@ int main()
     std::cout.sync_with_stdio(false);
     yastl::list<int> l;
     l.assign(10, 1);
+    l.push_back(10);
+    l.insert(l.end(), 2, 7);
     printl(l);
 
 
