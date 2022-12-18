@@ -16,6 +16,7 @@ int main()
     l.assign(10, 1);
     l.push_back(10);
     l.insert(l.end(), 2, 7);
+    l.resize(20);
     printl(l);
 
 

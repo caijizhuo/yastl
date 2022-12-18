@@ -77,9 +77,10 @@ T identity_element(multiplies<T>) { return T(1); }
 
 // 函数对象：等于
 template <class T>
-struct equal_to :public binary_function<T, T, bool>
-{
-  bool operator()(const T& x, const T& y) const { return x == y; }
+struct equal_to : public binary_function<T, T, bool> {
+  bool operator()(const T& x, const T& y) const {
+    return x == y;
+  }
 };
 
 // 函数对象：不等于
@@ -98,9 +99,10 @@ struct greater :public binary_function<T, T, bool>
 
 // 函数对象：小于
 template <class T>
-struct less :public binary_function<T, T, bool>
-{
-  bool operator()(const T& x, const T& y) const { return x < y; }
+struct less : public binary_function<T, T, bool> {
+  bool operator()(const T& x, const T& y) const {
+    return x < y;
+  }
 };
 
 // 函数对象：大于等于
