@@ -52,7 +52,7 @@ struct list_node_base {
     return static_cast<node_ptr>(self());
   }
 
-  // prev = next = self() 让这个节点脱离出来
+  // prev = next = self() 让这个节点脱离出来,用来让这个列表只有个end
   void unlink() {
     prev = next = self();
   }
@@ -563,43 +563,42 @@ private:
   // create / destroy node
   template <class ...Args>
   node_ptr create_node(Args&& ...agrs);
-  void     destroy_node(node_ptr p);
+  void destroy_node(node_ptr p);
 
   // initialize
-  void      fill_init(size_type n, const value_type& value);
+  void fill_init(size_type n, const value_type& value);
   template <class Iter>
-  void      copy_init(Iter first, Iter last);
+  void copy_init(Iter first, Iter last);
 
   // link / unlink
-  iterator  link_iter_node(const_iterator pos, base_ptr node);
-  void      link_nodes(base_ptr p, base_ptr first, base_ptr last);
-  void      link_nodes_at_front(base_ptr first, base_ptr last);
-  void      link_nodes_at_back(base_ptr first, base_ptr last);
-  void      unlink_nodes(base_ptr f, base_ptr l);
+  iterator link_iter_node(const_iterator pos, base_ptr node);
+  void link_nodes(base_ptr p, base_ptr first, base_ptr last);
+  void link_nodes_at_front(base_ptr first, base_ptr last);
+  void link_nodes_at_back(base_ptr first, base_ptr last);
+  void unlink_nodes(base_ptr f, base_ptr l);
 
   // assign
-  void      fill_assign(size_type n, const value_type& value);
+  void fill_assign(size_type n, const value_type& value);
   template <class Iter>
-  void      copy_assign(Iter first, Iter last);
+  void copy_assign(Iter first, Iter last);
 
   // insert
-  iterator  fill_insert(const_iterator pos, size_type n, const value_type& value);
+  iterator fill_insert(const_iterator pos, size_type n, const value_type& value);
   template <class Iter>
-  iterator  copy_insert(const_iterator pos, size_type n, Iter first);
+  iterator copy_insert(const_iterator pos, size_type n, Iter first);
 
   // sort
   template <class Compared>
-  iterator  list_sort(iterator first, iterator last, size_type n, Compared comp);
+  iterator list_sort(iterator first, iterator last, size_type n, Compared comp);
 
 }; // list end
 
 /*****************************************************************************************/
 
-// 删除 pos 处的元素
+// 删除 pos 处的元素,返回它下一个节点的iterator
 template <class T>
 typename list<T>::iterator 
-list<T>::erase(const_iterator pos)
-{
+list<T>::erase(const_iterator pos) {
   YASTL_DEBUG(pos != cend());
   auto n = pos.node_;
   auto next = n->next;
@@ -609,19 +608,16 @@ list<T>::erase(const_iterator pos)
   return iterator(next);
 }
 
-// 删除 [first, last) 内的元素
+// 删除 [first, last) 内的元素，返回last的迭代器
 template <class T>
 typename list<T>::iterator 
-list<T>::erase(const_iterator first, const_iterator last)
-{
-  if (first != last)
-  {
-    unlink_nodes(first.node_, last.node_->prev);
-    while (first != last)
-    {
+list<T>::erase(const_iterator first, const_iterator last) {
+  if (first != last) {
+    unlink_nodes(first.node_, last.node_->prev); // 因为是左闭右开区间，所以last.node_->prev
+    while (first != last) {
       auto cur = first.node_;
       ++first;
-      destroy_node(cur->as_node());
+      destroy_node(cur->as_node()); // 依次析构
       --size_;
     }
   }
@@ -630,16 +626,13 @@ list<T>::erase(const_iterator first, const_iterator last)
 
 // 清空 list
 template <class T>
-void list<T>::clear()
-{
-  if (size_ != 0)
-  {
-    auto cur = node_->next;
-    for (base_ptr next = cur->next; cur != node_; cur = next, next = cur->next)
-    {
-      destroy_node(cur->as_node());
+void list<T>::clear() {
+  if (size_ != 0) {
+    auto cur = node_->next; // 从头开始
+    for (base_ptr next = cur->next; cur != node_; cur = next, next = cur->next) {
+      destroy_node(cur->as_node()); // 依次销毁
     }
-    node_->unlink();
+    node_->unlink(); // 置空
     size_ = 0;
   }
 }
@@ -662,15 +655,13 @@ void list<T>::resize(size_type new_size, const value_type& value) {
 
 // 将 list x 接合于 pos 之前
 template <class T>
-void list<T>::splice(const_iterator pos, list& x)
-{
+void list<T>::splice(const_iterator pos, list& x) {
   YASTL_DEBUG(this != &x);
-  if (!x.empty())
-  {
+  if (!x.empty()) {
     THROW_LENGTH_ERROR_IF(size_ > max_size() - x.size_, "list<T>'s size too big");
 
-    auto f = x.node_->next;
-    auto l = x.node_->prev;
+    auto f = x.node_->next; // 开头的元素
+    auto l = x.node_->prev; // end前一个有效元素
 
     x.unlink_nodes(f, l);
     link_nodes(pos.node_, f, l);
@@ -680,12 +671,10 @@ void list<T>::splice(const_iterator pos, list& x)
   }
 }
 
-// 将 it 所指的节点接合于 pos 之前
+// 将 it 所指的节点接合于 pos 之前, it是x中的一个节点，并且把it从x中移除
 template <class T>
-void list<T>::splice(const_iterator pos, list& x, const_iterator it)
-{
-  if (pos.node_ != it.node_ && pos.node_ != it.node_->next)
-  {
+void list<T>::splice(const_iterator pos, list& x, const_iterator it) {
+  if (pos.node_ != it.node_ && pos.node_ != it.node_->next) {
     THROW_LENGTH_ERROR_IF(size_ > max_size() - 1, "list<T>'s size too big");
 
     auto f = it.node_;
@@ -700,14 +689,12 @@ void list<T>::splice(const_iterator pos, list& x, const_iterator it)
 
 // 将 list x 的 [first, last) 内的节点接合于 pos 之前
 template <class T>
-void list<T>::splice(const_iterator pos, list& x, const_iterator first, const_iterator last)
-{
-  if (first != last && this != &x)
-  {
+void list<T>::splice(const_iterator pos, list& x, const_iterator first, const_iterator last) {
+  if (first != last && this != &x) {
     size_type n = yastl::distance(first, last);
     THROW_LENGTH_ERROR_IF(size_ > max_size() - n, "list<T>'s size too big");
     auto f = first.node_;
-    auto l = last.node_->prev;
+    auto l = last.node_->prev; 
 
     x.unlink_nodes(f, l);
     link_nodes(pos.node_, f, l);
@@ -796,20 +783,17 @@ void list<T>::merge(list& x, Compare comp) {
 
 // 将 list 反转
 template <class T>
-void list<T>::reverse()
-{
-  if (size_ <= 1)
-  {
+void list<T>::reverse() {
+  if (size_ <= 1) {
     return;
   }
   auto i = begin();
   auto e = end();
-  while (i.node_ != e.node_)
-  {
-    yastl::swap(i.node_->prev, i.node_->next);
-    i.node_ = i.node_->prev;
+  while (i.node_ != e.node_) {
+    yastl::swap(i.node_->prev, i.node_->next); // 呼唤前后
+    i.node_ = i.node_->prev; // 继续向前
   }
-  yastl::swap(e.node_->prev, e.node_->next);
+  yastl::swap(e.node_->prev, e.node_->next); // 处理最后一个节点
 }
 
 /*****************************************************************************************/
@@ -818,16 +802,13 @@ void list<T>::reverse()
 // 创建结点
 template <class T>
 template <class ...Args>
-typename list<T>::node_ptr 
-list<T>::create_node(Args&& ...args) {
+typename list<T>::node_ptr list<T>::create_node(Args&& ...args) {
   node_ptr p = node_allocator::allocate(1);
   try {
-    data_allocator::construct(yastl::address_of(p->value), yastl::forward<Args>(args)...);
+    data_allocator::construct(yastl::address_of(p->value), yastl::forward<Args>(args)...); // 在指定地址上构造对象
     p->prev = nullptr;
     p->next = nullptr;
-  }
-  catch (...)
-  {
+  } catch (...) {
     node_allocator::deallocate(p);
     throw;
   }
@@ -836,8 +817,7 @@ list<T>::create_node(Args&& ...args) {
 
 // 销毁结点，析构并释放内存
 template <class T>
-void list<T>::destroy_node(node_ptr p)
-{
+void list<T>::destroy_node(node_ptr p) {
   data_allocator::destroy(yastl::address_of(p->value));
   node_allocator::deallocate(p);
 }
@@ -846,16 +826,14 @@ void list<T>::destroy_node(node_ptr p)
 template <class T>
 void list<T>::fill_init(size_type n, const value_type& value) {
   node_ = base_allocator::allocate(1);
-  node_->unlink();
+  node_->unlink(); // 初始化一个end
   size_ = n;
   try {
     for (; n > 0; --n) {
       auto node = create_node(value);
       link_nodes_at_back(node->as_base(), node->as_base());
     }
-  }
-  catch (...)
-  {
+  } catch (...) {
     clear();
     base_allocator::deallocate(node_);
     node_ = nullptr;
@@ -866,22 +844,17 @@ void list<T>::fill_init(size_type n, const value_type& value) {
 // 以 [first, last) 初始化容器
 template <class T>
 template <class Iter>
-void list<T>::copy_init(Iter first, Iter last)
-{
+void list<T>::copy_init(Iter first, Iter last) {
   node_ = base_allocator::allocate(1);
   node_->unlink();
   size_type n = yastl::distance(first, last);
   size_ = n;
-  try
-  {
-    for (; n > 0; --n, ++first)
-    {
-      auto node = create_node(*first);
-      link_nodes_at_back(node->as_base(), node->as_base());
+  try {
+    for (; n > 0; --n, ++first) {
+      auto node = create_node(*first); // 创建一个值和输入迭代器一样的节点
+      link_nodes_at_back(node->as_base(), node->as_base()); // 插入
     }
-  }
-  catch (...)
-  {
+  } catch (...) {
     clear();
     base_allocator::deallocate(node_);
     node_ = nullptr;
@@ -924,8 +897,7 @@ void list<T>::link_nodes_at_front(base_ptr first, base_ptr last) {
 
 // 在尾部连接 [first, last] 结点
 template <class T>
-void list<T>::link_nodes_at_back(base_ptr first, base_ptr last)
-{
+void list<T>::link_nodes_at_back(base_ptr first, base_ptr last) {
   last->next = node_;
   first->prev = node_->prev;
   first->prev->next = first;
@@ -941,20 +913,15 @@ void list<T>::unlink_nodes(base_ptr first, base_ptr last) {
 
 // 用 n 个元素为容器赋值
 template <class T>
-void list<T>::fill_assign(size_type n, const value_type& value)
-{
+void list<T>::fill_assign(size_type n, const value_type& value) {
   auto i = begin();
   auto e = end();
-  for (; n > 0 && i != e; --n, ++i)
-  {
+  for (; n > 0 && i != e; --n, ++i) {
     *i = value;
   }
-  if (n > 0)
-  {
+  if (n > 0) { // 要插入的数据量比当前链表还长
     insert(e, n, value);
-  }
-  else
-  {
+  } else { // 插完之后当前链表还有剩
     erase(i, e);
   }
 }
@@ -962,20 +929,15 @@ void list<T>::fill_assign(size_type n, const value_type& value)
 // 复制[f2, l2)为容器赋值
 template <class T>
 template <class Iter>
-void list<T>::copy_assign(Iter f2, Iter l2)
-{
+void list<T>::copy_assign(Iter f2, Iter l2) {
   auto f1 = begin();
   auto l1 = end();
-  for (; f1 != l1 && f2 != l2; ++f1, ++f2)
-  {
+  for (; f1 != l1 && f2 != l2; ++f1, ++f2) {
     *f1 = *f2;
   }
-  if (f2 == l2)
-  {
+  if (f2 == l2) { // 当前链表比给定参数列表长
     erase(f1, l1);
-  }
-  else
-  {
+  } else { // 当前列表比给定参数列表短
     insert(l1, f2, l2);
   }
 }
@@ -983,36 +945,30 @@ void list<T>::copy_assign(Iter f2, Iter l2)
 // 在 pos 处插入 n 个元素
 template <class T>
 typename list<T>::iterator 
-list<T>::fill_insert(const_iterator pos, size_type n, const value_type& value)
-{
+list<T>::fill_insert(const_iterator pos, size_type n, const value_type& value) {
   iterator r(pos.node_);
-  if (n != 0)
-  {
+  if (n != 0) {
     const auto add_size = n;
     auto node = create_node(value);
     node->prev = nullptr;
     r = iterator(node);
     iterator end = r;
-    try
-    {
+    try {
       // 前面已经创建了一个节点，还需 n - 1 个
-      for (--n; n > 0; --n, ++end)
-      {
+      for (--n; n > 0; --n, ++end) {
         auto next = create_node(value);
         end.node_->next = next->as_base();  // link node
         next->prev = end.node_;
       }
       size_ += add_size;
-    }
-    catch (...)
-    {
+    } catch (...) { // 有异常则全部释放
       auto enode = end.node_;
-      while (true)
-      {
+      while (true) {
         auto prev = enode->prev;
         destroy_node(enode->as_node());
-        if (prev == nullptr)
+        if (prev == nullptr) {
           break;
+        }
         enode = prev;
       }
       throw;
@@ -1022,37 +978,29 @@ list<T>::fill_insert(const_iterator pos, size_type n, const value_type& value)
   return r;
 }
 
-// 在 pos 处插入 [first, last) 的元素
+// 在 pos 处插入 [first, first + n) 的元素
 template <class T>
 template <class Iter>
-typename list<T>::iterator 
-list<T>::copy_insert(const_iterator pos, size_type n, Iter first)
-{
+typename list<T>::iterator list<T>::copy_insert(const_iterator pos, size_type n, Iter first) {
   iterator r(pos.node_);
-  if (n != 0)
-  {
+  if (n != 0) {
     const auto add_size = n;
-    auto node = create_node(*first);
+    auto node = create_node(*first); // 拷贝构造，不改变first迭代器元素所在的链表
     node->prev = nullptr;
     r = iterator(node);
     iterator end = r;
-    try
-    {
-      for (--n, ++first; n > 0; --n, ++first, ++end)
-      {
+    try {
+      for (--n, ++first; n > 0; --n, ++first, ++end) {
         auto next = create_node(*first);
         end.node_->next = next->as_base();  // link node
         next->prev = end.node_;
       }
       size_ += add_size;
-    }
-    catch (...)
-    {
+    } catch (...) {
       auto enode = end.node_;
-      while (true)
-      {
+      while (true) {
         auto prev = enode->prev;
-        destroy_node(enode->as_node());
+        destroy_node(enode->as_node()); // 不成功析构所有
         if (prev == nullptr)
           break;
         enode = prev;
@@ -1067,8 +1015,7 @@ list<T>::copy_insert(const_iterator pos, size_type n, Iter first)
 // 对 list 进行归并排序，返回一个迭代器指向区间最小元素的位置
 template <class T>
 template <class Compared>
-typename list<T>::iterator 
-list<T>::list_sort(iterator f1, iterator l2, size_type n, Compared comp) {
+typename list<T>::iterator list<T>::list_sort(iterator f1, iterator l2, size_type n, Compared comp) {
   if (n < 2) { // 一个不用排序
     return f1;
   }
@@ -1089,20 +1036,20 @@ list<T>::list_sort(iterator f1, iterator l2, size_type n, Compared comp) {
   auto result = f1 = list_sort(f1, l1, n2, comp);  // 前半段的最小位置
   auto f2 = l1 = list_sort(l1, l2, n - n2, comp);  // 后半段的最小位置
 
-  // 把较小的一段区间移到前面
-  if (comp(*f2, *f1)) {
+  // 把较小的一段区间移到前面，让result上有一个节点
+  if (comp(*f2, *f1)) { // 第二段的第一个元素比第一段第一个元素小
     auto m = f2;
     ++m;
-    for (; m != l2 && comp(*m, *f1); ++m)
+    for (; m != l2 && comp(*m, *f1); ++m) // 遍历f2直到大于等于第一段第一个元素
       ;
-    auto f = f2.node_;
+    auto f = f2.node_; // 迭代器的node指向当前节点
     auto l = m.node_->prev;
     result = f2;
     l1 = f2 = m;
     unlink_nodes(f, l);
     m = f1;
     ++m;
-    link_nodes(f1.node_, f, l);
+    link_nodes(f1.node_, f, l); // 把第二段小于第一段第一个元素的全接到第一个元素前面
     f1 = m;
   } else {
     ++f1;
@@ -1135,44 +1082,38 @@ list<T>::list_sort(iterator f1, iterator l2, size_type n, Compared comp) {
 
 // 重载比较操作符
 template <class T>
-bool operator==(const list<T>& lhs, const list<T>& rhs)
-{
+bool operator==(const list<T>& lhs, const list<T>& rhs) {
   auto f1 = lhs.cbegin();
   auto f2 = rhs.cbegin();
   auto l1 = lhs.cend();
   auto l2 = rhs.cend();
-  for (; f1 != l1 && f2 != l2 && *f1 == *f2; ++f1, ++f2)
+  for (; f1 != l1 && f2 != l2 && *f1 == *f2; ++f1, ++f2) // 判断条件 *f1 == *f2
     ;
   return f1 == l1 && f2 == l2;
 }
 
 template <class T>
-bool operator<(const list<T>& lhs, const list<T>& rhs)
-{
+bool operator<(const list<T>& lhs, const list<T>& rhs) {
   return yastl::lexicographical_compare(lhs.cbegin(), lhs.cend(), rhs.cbegin(), rhs.cend());
 }
 
 template <class T>
-bool operator!=(const list<T>& lhs, const list<T>& rhs)
-{
+bool operator!=(const list<T>& lhs, const list<T>& rhs) {
   return !(lhs == rhs);
 }
 
 template <class T>
-bool operator>(const list<T>& lhs, const list<T>& rhs)
-{
+bool operator>(const list<T>& lhs, const list<T>& rhs) {
   return rhs < lhs;
 }
 
 template <class T>
-bool operator<=(const list<T>& lhs, const list<T>& rhs)
-{
+bool operator<=(const list<T>& lhs, const list<T>& rhs) {
   return !(rhs < lhs);
 }
 
 template <class T>
-bool operator>=(const list<T>& lhs, const list<T>& rhs)
-{
+bool operator>=(const list<T>& lhs, const list<T>& rhs) {
   return !(lhs < rhs);
 }
 

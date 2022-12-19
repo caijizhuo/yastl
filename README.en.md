@@ -13,9 +13,9 @@ Yet another STL for learning.
 ├── functional.h
 ├── heap_algo.h
 ├── iterator.h          迭代器的定义                                100%
-├── list.h              list实现                                      0%
 ├── memory.h            一些高级内存管理函数，似乎没用上               N/A
 ├── type_traits.h       偏特化头文件以及pair判断                     100%
 ├── uninitialized.h     对未初始化的空间进行构造元素                 100%
 ├── util.h              给uninitialized.h使用的工具                  10%
+├── list.h              list实现                                    100%
 └── vector.h            vector实现                                  100%
