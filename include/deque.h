@@ -22,83 +22,65 @@
 #include "util.h"
 #include "exceptdef.h"
 
-namespace yastl
-{
-
-#ifdef max
-#pragma message("#undefing marco max")
-#undef max
-#endif // max
-
-#ifdef min
-#pragma message("#undefing marco min")
-#undef min
-#endif // min
+namespace yastl {
 
 // deque map 初始化的大小
 #ifndef DEQUE_MAP_INIT_SIZE
 #define DEQUE_MAP_INIT_SIZE 8
 #endif
 
+// 每个buffer的size，取决于泛型大小
 template <class T>
-struct deque_buf_size
-{
+struct deque_buf_size {
   static constexpr size_t value = sizeof(T) < 256 ? 4096 / sizeof(T) : 16;
 };
 
 // deque 的迭代器设计
+// 一个deque中有begin和end是这种iter
 template <class T, class Ref, class Ptr>
-struct deque_iterator : public iterator<random_access_iterator_tag, T>
-{
-  typedef deque_iterator<T, T&, T*>             iterator;
+struct deque_iterator : public iterator<random_access_iterator_tag, T> {
+  typedef deque_iterator<T, T&, T*> iterator;
   typedef deque_iterator<T, const T&, const T*> const_iterator;
-  typedef deque_iterator                        self;
+  typedef deque_iterator self;
 
-  typedef T            value_type;
-  typedef Ptr          pointer;
-  typedef Ref          reference;
-  typedef size_t       size_type;
-  typedef ptrdiff_t    difference_type;
-  typedef T*           value_pointer;
-  typedef T**          map_pointer;
+  typedef T value_type;
+  typedef Ptr pointer;
+  typedef Ref reference;
+  typedef size_t size_type;
+  typedef ptrdiff_t difference_type;
+  typedef T* value_pointer;
+  typedef T** map_pointer;
 
+  // 一个缓冲区的大小
   static const size_type buffer_size = deque_buf_size<T>::value;
 
   // 迭代器所含成员数据
-  value_pointer cur;    // 指向所在缓冲区的当前元素
-  value_pointer first;  // 指向所在缓冲区的头部
-  value_pointer last;   // 指向所在缓冲区的尾部
-  map_pointer   node;   // 缓冲区所在节点
+  value_pointer cur;    // 指向所在缓冲区的有效当前元素
+  value_pointer first;  // 指向所在缓冲区内存的头部
+  value_pointer last;   // 指向所在缓冲区内存的尾部
+  map_pointer node;   // 缓冲区所在节点，一个map中有很多这种节点
 
   // 构造、复制、移动函数
-  deque_iterator() noexcept
-    :cur(nullptr), first(nullptr), last(nullptr), node(nullptr) {}
+  deque_iterator() noexcept : cur(nullptr), first(nullptr), last(nullptr), node(nullptr) {}
 
-  deque_iterator(value_pointer v, map_pointer n)
-    :cur(v), first(*n), last(*n + buffer_size), node(n) {}
+  // cur为v，缓冲区地址为n
+  deque_iterator(value_pointer v, map_pointer n) : cur(v), first(*n), last(*n + buffer_size), node(n) {}
 
-  deque_iterator(const iterator& rhs)
-    :cur(rhs.cur), first(rhs.first), last(rhs.last), node(rhs.node)
-  {
-  }
-  deque_iterator(iterator&& rhs) noexcept
-    :cur(rhs.cur), first(rhs.first), last(rhs.last), node(rhs.node)
-  {
-    rhs.cur = nullptr;
+  // 拷贝构造迭代器
+  deque_iterator(const iterator& rhs) : cur(rhs.cur), first(rhs.first), last(rhs.last), node(rhs.node) {}
+
+  // 右值构造
+  deque_iterator(iterator&& rhs) noexcept : cur(rhs.cur), first(rhs.first), last(rhs.last), node(rhs.node) {
+    rhs.cur = nullptr; // 置空防止double free
     rhs.first = nullptr;
     rhs.last = nullptr;
     rhs.node = nullptr;
   }
 
-  deque_iterator(const const_iterator& rhs)
-    :cur(rhs.cur), first(rhs.first), last(rhs.last), node(rhs.node)
-  {
-  }
+  deque_iterator(const const_iterator& rhs) : cur(rhs.cur), first(rhs.first), last(rhs.last), node(rhs.node) {}
 
-  self& operator=(const iterator& rhs)
-  {
-    if (this != &rhs)
-    {
+  self& operator=(const iterator& rhs) {
+    if (this != &rhs) {
       cur = rhs.cur;
       first = rhs.first;
       last = rhs.last;
@@ -108,190 +90,192 @@ struct deque_iterator : public iterator<random_access_iterator_tag, T>
   }
 
   // 转到另一个缓冲区
-  void set_node(map_pointer new_node)
-  {
+  void set_node(map_pointer new_node) {
     node = new_node;
     first = *new_node;
     last = first + buffer_size;
   }
 
-  // 重载运算符
-  reference operator*()  const { return *cur; }
-  pointer   operator->() const { return cur; }
-
-  difference_type operator-(const self& x) const
-  {
-    return static_cast<difference_type>(buffer_size) * (node - x.node)
-      + (cur - first) - (x.cur - x.first);
+  // 重载运算符, 返回指针对应的内容
+  reference operator*() const {
+    return *cur;
+  }
+  pointer operator->() const {
+    return cur;
+  }
+  // 两个迭代器之间的距离 = buff大小 * 相差buff数 + 两个迭代器在对应buffer的偏移量之差
+  difference_type operator-(const self& x) const {
+    return static_cast<difference_type>(buffer_size) * (node - x.node) + (cur - first) - (x.cur - x.first);
   }
 
-  self& operator++()
-  {
+  // ++object 不产生临时对象
+  self& operator++() {
     ++cur;
-    if (cur == last)
-    { // 如果到达缓冲区的尾
+    if (cur == last) { // 如果到达缓冲区的尾
       set_node(node + 1);
       cur = first;
     }
     return *this;
   }
-  self operator++(int)
-  {
+  // object++ 产生临时对象，调用拷贝构造函数
+  self operator++(int) {
     self tmp = *this;
     ++*this;
     return tmp;
   }
 
-  self& operator--()
-  {
-    if (cur == first)
-    { // 如果到达缓冲区的头
-      set_node(node - 1);
+  self& operator--() {
+    if (cur == first) { // 如果到达缓冲区的头
+      set_node(node - 1); // 换到上一档缓冲区
       cur = last;
     }
     --cur;
     return *this;
   }
-  self operator--(int)
-  {
+
+  self operator--(int) {
     self tmp = *this;
     --*this;
     return tmp;
   }
 
-  self& operator+=(difference_type n)
-  {
-    const auto offset = n + (cur - first);
-    if (offset >= 0 && offset < static_cast<difference_type>(buffer_size))
-    { // 仍在当前缓冲区
+  self& operator+=(difference_type n) {
+    const auto offset = n + (cur - first); // 相对于buffer头部的总偏移量
+    if (offset >= 0 && offset < static_cast<difference_type>(buffer_size)) { // 仍在当前缓冲区
       cur += n;
-    }
-    else
-    { // 要跳到其他的缓冲区
+    } else { // 要跳到其他的缓冲区
       const auto node_offset = offset > 0
-        ? offset / static_cast<difference_type>(buffer_size)
-        : -static_cast<difference_type>((-offset - 1) / buffer_size) - 1;
+        ? offset / static_cast<difference_type>(buffer_size) // 正的,算出跳几个缓冲区
+        : -static_cast<difference_type>((-offset - 1) / buffer_size) - 1; // 负的
       set_node(node + node_offset);
-      cur = first + (offset - node_offset * static_cast<difference_type>(buffer_size));
+      cur = first + (offset - node_offset * static_cast<difference_type>(buffer_size)); // 计算出在一个缓冲区内的偏移量
     }
     return *this;
   }
-  self operator+(difference_type n) const
-  {
+  self operator+(difference_type n) const {
     self tmp = *this;
     return tmp += n;
   }
-  self& operator-=(difference_type n)
-  {
+  self& operator-=(difference_type n) {
     return *this += -n;
   }
-  self operator-(difference_type n) const
-  {
+  self operator-(difference_type n) const {
     self tmp = *this;
     return tmp -= n;
   }
-
-  reference operator[](difference_type n) const { return *(*this + n); }
+  // 允许随机访问
+  reference operator[](difference_type n) const {
+    return *(*this + n);
+  }
 
   // 重载比较操作符
-  bool operator==(const self& rhs) const { return cur == rhs.cur; }
-  bool operator< (const self& rhs) const
-  { return node == rhs.node ? (cur < rhs.cur) : (node < rhs.node); }
-  bool operator!=(const self& rhs) const { return !(*this == rhs); }
-  bool operator> (const self& rhs) const { return rhs < *this; }
-  bool operator<=(const self& rhs) const { return !(rhs < *this); }
-  bool operator>=(const self& rhs) const { return !(*this < rhs); }
+  bool operator==(const self& rhs) const {
+    return cur == rhs.cur;
+  }
+  bool operator< (const self& rhs) const {
+    return node == rhs.node ? (cur < rhs.cur) : (node < rhs.node);
+  }
+  bool operator!=(const self& rhs) const {
+    return !(*this == rhs);
+  }
+  bool operator> (const self& rhs) const {
+    return rhs < *this;
+  }
+  bool operator<=(const self& rhs) const {
+    return !(rhs < *this);
+  }
+  bool operator>=(const self& rhs) const {
+    return !(*this < rhs);
+  }
 };
 
 // 模板类 deque
 // 模板参数代表数据类型
 template <class T>
-class deque
-{
+class deque {
 public:
   // deque 的型别定义
-  typedef yastl::allocator<T>                      allocator_type;
-  typedef yastl::allocator<T>                      data_allocator;
-  typedef yastl::allocator<T*>                     map_allocator;
+  typedef yastl::allocator<T> allocator_type;
+  typedef yastl::allocator<T> data_allocator;
+  typedef yastl::allocator<T*> map_allocator;
 
-  typedef typename allocator_type::value_type      value_type;
-  typedef typename allocator_type::pointer         pointer;
-  typedef typename allocator_type::const_pointer   const_pointer;
-  typedef typename allocator_type::reference       reference;
+  typedef typename allocator_type::value_type value_type;
+  typedef typename allocator_type::pointer pointer;
+  typedef typename allocator_type::const_pointer const_pointer;
+  typedef typename allocator_type::reference reference;
   typedef typename allocator_type::const_reference const_reference;
-  typedef typename allocator_type::size_type       size_type;
+  typedef typename allocator_type::size_type size_type;
   typedef typename allocator_type::difference_type difference_type;
-  typedef pointer*                                 map_pointer;
-  typedef const_pointer*                           const_map_pointer;
+  typedef pointer* map_pointer;
+  typedef const_pointer* const_map_pointer;
 
-  typedef deque_iterator<T, T&, T*>                iterator;
-  typedef deque_iterator<T, const T&, const T*>    const_iterator;
-  typedef yastl::reverse_iterator<iterator>        reverse_iterator;
-  typedef yastl::reverse_iterator<const_iterator>  const_reverse_iterator;
+  typedef deque_iterator<T, T&, T*> iterator;
+  typedef deque_iterator<T, const T&, const T*> const_iterator;
+  typedef yastl::reverse_iterator<iterator> reverse_iterator;
+  typedef yastl::reverse_iterator<const_iterator> const_reverse_iterator;
 
-  allocator_type get_allocator() { return allocator_type(); }
+  allocator_type get_allocator() {
+    return allocator_type();
+  }
 
+  // 每个buffer的size
   static const size_type buffer_size = deque_buf_size<T>::value;
 
 private:
   // 用以下四个数据来表现一个 deque
-  iterator       begin_;     // 指向第一个节点
-  iterator       end_;       // 指向最后一个结点
-  map_pointer    map_;       // 指向一块 map，map 中的每个元素都是一个指针，指向一个缓冲区
-  size_type      map_size_;  // map 内指针的数目
+  iterator begin_;     // 指向第一个节点
+  iterator end_;       // 指向最后一个结点
+  map_pointer map_;       // 指向一块 map，map 中的每个元素都是一个指针，指向一个缓冲区
+  size_type map_size_;  // map 内指针的数目
 
 public:
   // 构造、复制、移动、析构函数
+  // 初始化一个空的
+  deque() {
+    fill_init(0, value_type());
+  }
+  // 初始化一个n个大小的
+  explicit deque(size_type n) {
+    fill_init(n, value_type());
+  }
+  // 初始化一个n个大小且全为value的
+  deque(size_type n, const value_type& value) {
+    fill_init(n, value);
+  }
+  // 用迭代器初始化
+  template <class IIter, typename std::enable_if<yastl::is_input_iterator<IIter>::value, int>::type = 0>
+  deque(IIter first, IIter last) {
+    copy_init(first, last, iterator_category(first));
+  }
 
-  deque()
-  { fill_init(0, value_type()); }
-
-  explicit deque(size_type n)
-  { fill_init(n, value_type()); }
-
-  deque(size_type n, const value_type& value)
-  { fill_init(n, value); }
-
-  template <class IIter, typename std::enable_if<
-    yastl::is_input_iterator<IIter>::value, int>::type = 0>
-  deque(IIter first, IIter last)
-  { copy_init(first, last, iterator_category(first)); }
-
-  deque(std::initializer_list<value_type> ilist)
-  {
+  deque(std::initializer_list<value_type> ilist) {
     copy_init(ilist.begin(), ilist.end(), yastl::forward_iterator_tag());
   }
-
-  deque(const deque& rhs)
-  {
+  // 拷贝构造
+  deque(const deque& rhs) {
     copy_init(rhs.begin(), rhs.end(), yastl::forward_iterator_tag());
   }
-  deque(deque&& rhs) noexcept
-    :begin_(yastl::move(rhs.begin_)),
-    end_(yastl::move(rhs.end_)),
-    map_(rhs.map_),
-    map_size_(rhs.map_size_)
-  {
-    rhs.map_ = nullptr;
+  // 移动构造
+  deque(deque&& rhs) noexcept : begin_(yastl::move(rhs.begin_)), end_(yastl::move(rhs.end_)),
+                                map_(rhs.map_), map_size_(rhs.map_size_) {
+    rhs.map_ = nullptr; // 防止double free
     rhs.map_size_ = 0;
   }
 
   deque& operator=(const deque& rhs);
   deque& operator=(deque&& rhs);
 
-  deque& operator=(std::initializer_list<value_type> ilist)
-  {
+  deque& operator=(std::initializer_list<value_type> ilist) {
     deque tmp(ilist);
     swap(tmp);
     return *this;
   }
 
-  ~deque()
-  {
-    if (map_ != nullptr)
-    {
+  ~deque() {
+    if (map_ != nullptr) {
+      // 对原作做了一些改动，把其余的内存在clear中释放了
       clear();
-      data_allocator::deallocate(*begin_.node, buffer_size);
+      data_allocator::deallocate(*begin_.node, buffer_size); // 只释放头节点所在缓冲区? 对clear做了改动
       *begin_.node = nullptr;
       map_allocator::deallocate(map_, map_size_);
       map_ = nullptr;
@@ -335,7 +319,7 @@ public:
   size_type max_size() const noexcept  { return static_cast<size_type>(-1); }
   void      resize(size_type new_size) { resize(new_size, value_type()); }
   void      resize(size_type new_size, const value_type& value);
-  void      shrink_to_fit() noexcept;
+  void shrink_to_fit() noexcept;
 
   // 访问元素相关操作 
   reference       operator[](size_type n)
@@ -432,7 +416,7 @@ public:
 
   iterator erase(iterator position);
   iterator erase(iterator first, iterator last);
-  void     clear();
+  void clear();
 
   // swap
 
@@ -447,7 +431,7 @@ private:
   void        destroy_buffer(map_pointer nstart, map_pointer nfinish);
 
   // initialize
-  void        map_init(size_type nelem);
+  void map_init(size_type nelem);
   void        fill_init(size_type n, const value_type& value);
   template <class IIter>
   void        copy_init(IIter, IIter, input_iterator_tag);
@@ -531,18 +515,17 @@ void deque<T>::resize(size_type new_size, const value_type& value)
   }
 }
 
-// 减小容器容量
+// 减小容器容量，把之前出队的“废弃”空间释放,最后就剩有效空间没有释放
 template <class T>
-void deque<T>::shrink_to_fit() noexcept
-{
+void deque<T>::shrink_to_fit() noexcept {
   // 至少会留下头部缓冲区
-  for (auto cur = map_; cur < begin_.node; ++cur)
-  {
+  // 释放头部的废弃空间
+  for (auto cur = map_; cur < begin_.node; ++cur) {
     data_allocator::deallocate(*cur, buffer_size);
     *cur = nullptr;
   }
-  for (auto cur = end_.node + 1; cur < map_ + map_size_; ++cur)
-  {
+  // 释放尾部废弃空间
+  for (auto cur = end_.node + 1; cur < map_ + map_size_; ++cur) {
     data_allocator::deallocate(*cur, buffer_size);
     *cur = nullptr;
   }
@@ -810,34 +793,31 @@ deque<T>::erase(iterator first, iterator last)
   }
 }
 
-// 清空 deque
+// 清空 deque,释放废弃空间，以及调用有效空间的析构函数
 template <class T>
-void deque<T>::clear()
-{
+void deque<T>::clear() {
   // clear 会保留头部的缓冲区
-  for (map_pointer cur = begin_.node + 1; cur < end_.node; ++cur)
-  {
+  for (map_pointer cur = begin_.node + 1; cur < end_.node; ++cur) { // 对于map中除了begin和end的每个node
     data_allocator::destroy(*cur, *cur + buffer_size);
+    data_allocator::deallocate(*cur, buffer_size); // 原作漏掉的内存释放
+    *cur = nullptr;                                // 原作漏掉的内存释放
   }
-  if (begin_.node != end_.node)
-  { // 有两个以上的缓冲区
+  if (begin_.node != end_.node) { // 有两个以上的缓冲区
     yastl::destroy(begin_.cur, begin_.last);
     yastl::destroy(end_.first, end_.cur);
+    data_allocator::deallocate(*end_.node, buffer_size); // 原作漏掉的内存释放
+    *end_.node = nullptr;                                // 原作漏掉的内存释放
+  } else {
+    yastl::destroy(begin_.cur, end_.cur); // 只剩一个缓冲区了
   }
-  else
-  {
-    yastl::destroy(begin_.cur, end_.cur);
-  }
-  shrink_to_fit();
+  shrink_to_fit(); // 释放废弃空间
   end_ = begin_;
 }
 
 // 交换两个 deque
 template <class T>
-void deque<T>::swap(deque& rhs) noexcept
-{
-  if (this != &rhs)
-  {
+void deque<T>::swap(deque& rhs) noexcept {
+  if (this != &rhs) {
     yastl::swap(begin_, rhs.begin_);
     yastl::swap(end_, rhs.end_);
     yastl::swap(map_, rhs.map_);
@@ -847,35 +827,27 @@ void deque<T>::swap(deque& rhs) noexcept
 
 /*****************************************************************************************/
 // helper function
-
+// 分配map指针区域内存以及初始化置空（不分配缓冲区）
 template <class T>
-typename deque<T>::map_pointer
-deque<T>::create_map(size_type size)
-{
+typename deque<T>::map_pointer deque<T>::create_map(size_type size) {
   map_pointer mp = nullptr;
   mp = map_allocator::allocate(size);
-  for (size_type i = 0; i < size; ++i)
+  for (size_type i = 0; i < size; ++i) {
     *(mp + i) = nullptr;
+  }
   return mp;
 }
 
-// create_buffer 函数
+// create_buffer 函数, 分配缓冲区[nstart, nfinish]这段map指针所对应的缓冲区
 template <class T>
-void deque<T>::
-create_buffer(map_pointer nstart, map_pointer nfinish)
-{
+void deque<T>::create_buffer(map_pointer nstart, map_pointer nfinish) {
   map_pointer cur;
-  try
-  {
-    for (cur = nstart; cur <= nfinish; ++cur)
-    {
+  try {
+    for (cur = nstart; cur <= nfinish; ++cur) {
       *cur = data_allocator::allocate(buffer_size);
     }
-  }
-  catch (...)
-  {
-    while (cur != nstart)
-    {
+  } catch (...) {
+    while (cur != nstart) {
       --cur;
       data_allocator::deallocate(*cur, buffer_size);
       *cur = nullptr;
@@ -898,17 +870,12 @@ destroy_buffer(map_pointer nstart, map_pointer nfinish)
 
 // map_init 函数
 template <class T>
-void deque<T>::
-map_init(size_type nElem)
-{
+void deque<T>::map_init(size_type nElem) {
   const size_type nNode = nElem / buffer_size + 1;  // 需要分配的缓冲区个数
   map_size_ = yastl::max(static_cast<size_type>(DEQUE_MAP_INIT_SIZE), nNode + 2);
-  try
-  {
+  try {
     map_ = create_map(map_size_);
-  }
-  catch (...)
-  {
+  } catch (...) {
     map_ = nullptr;
     map_size_ = 0;
     throw;
@@ -917,12 +884,9 @@ map_init(size_type nElem)
   // 让 nstart 和 nfinish 都指向 map_ 最中央的区域，方便向头尾扩充
   map_pointer nstart = map_ + (map_size_ - nNode) / 2;
   map_pointer nfinish = nstart + nNode - 1;
-  try
-  {
+  try {
     create_buffer(nstart, nfinish);
-  }
-  catch (...)
-  {
+  } catch (...) {
     map_allocator::deallocate(map_, map_size_);
     map_ = nullptr;
     map_size_ = 0;
@@ -936,14 +900,10 @@ map_init(size_type nElem)
 
 // fill_init 函数
 template <class T>
-void deque<T>::
-fill_init(size_type n, const value_type& value)
-{
+void deque<T>::fill_init(size_type n, const value_type& value) {
   map_init(n);
-  if (n != 0)
-  {
-    for (auto cur = begin_.node; cur < end_.node; ++cur)
-    {
+  if (n != 0) {
+    for (auto cur = begin_.node; cur < end_.node; ++cur) {
       yastl::uninitialized_fill(*cur, *cur + buffer_size, value);
     }
     yastl::uninitialized_fill(end_.first, end_.cur, value);

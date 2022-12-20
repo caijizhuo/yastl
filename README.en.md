@@ -18,4 +18,5 @@ Yet another STL for learning.
 ├── uninitialized.h     对未初始化的空间进行构造元素                 100%
 ├── util.h              给uninitialized.h使用的工具                  10%
 ├── list.h              list实现                                    100%
+├── deque.h             deque实现                                   20%
 └── vector.h            vector实现                                  100%

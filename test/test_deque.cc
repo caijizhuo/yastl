@@ -4,8 +4,8 @@
 #include "util.h"
 int main()
 {
-    std::cout.sync_with_stdio(false);
-    yastl::deque<int> dq;
+    yastl::deque<int> dq(3999, 9);
+    std::cout << dq.buffer_size;
 
 
     std::cout << "end!" << std::endl;
