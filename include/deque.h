@@ -223,8 +223,8 @@ public:
 
 private:
   // 用以下四个数据来表现一个 deque
-  iterator begin_;     // 指向第一个节点
-  iterator end_;       // 指向最后一个结点
+  iterator begin_;     // 指向第一个元素
+  iterator end_;       // 指向最后一个元素
   map_pointer map_;       // 指向一块 map，map 中的每个元素都是一个指针，指向一个缓冲区
   size_type map_size_;  // map 内指针的数目
 
@@ -285,82 +285,95 @@ public:
 public:
   // 迭代器相关操作
 
-  iterator               begin()         noexcept
-  { return begin_; }
-  const_iterator         begin()   const noexcept
-  { return begin_; }
-  iterator               end()           noexcept
-  { return end_; }
-  const_iterator         end()     const noexcept
-  { return end_; }
+  iterator begin() noexcept {
+    return begin_;
+  }
+  const_iterator begin() const noexcept {
+    return begin_;
+  }
+  iterator end() noexcept {
+    return end_;
+  }
+  const_iterator end() const noexcept {
+    return end_;
+  }
 
-  reverse_iterator       rbegin()        noexcept
-  { return reverse_iterator(end()); }
-  const_reverse_iterator rbegin()  const noexcept
-  { return reverse_iterator(end()); }
-  reverse_iterator       rend()          noexcept
-  { return reverse_iterator(begin()); }
-  const_reverse_iterator rend()    const noexcept
-  { return reverse_iterator(begin()); }
+  reverse_iterator rbegin() noexcept {
+    return reverse_iterator(end());
+  }
+  const_reverse_iterator rbegin() const noexcept {
+    return reverse_iterator(end());
+  }
+  reverse_iterator rend() noexcept {
+    return reverse_iterator(begin());
+  }
+  const_reverse_iterator rend() const noexcept {
+    return reverse_iterator(begin());
+  }
 
-  const_iterator         cbegin()  const noexcept
-  { return begin(); }
-  const_iterator         cend()    const noexcept
-  { return end(); }
-  const_reverse_iterator crbegin() const noexcept
-  { return rbegin(); }
-  const_reverse_iterator crend()   const noexcept
-  { return rend(); }
+  const_iterator cbegin() const noexcept {
+    return begin();
+  }
+  const_iterator cend() const noexcept {
+    return end();
+  }
+  const_reverse_iterator crbegin() const noexcept {
+    return rbegin();
+  }
+  const_reverse_iterator crend() const noexcept {
+    return rend();
+  }
 
   // 容量相关操作
 
-  bool      empty()    const noexcept  { return begin() == end(); }
-  size_type size()     const noexcept  { return end_ - begin_; }
-  size_type max_size() const noexcept  { return static_cast<size_type>(-1); }
-  void      resize(size_type new_size) { resize(new_size, value_type()); }
-  void      resize(size_type new_size, const value_type& value);
+  bool empty() const noexcept {
+    return begin() == end();
+  }
+  // 返回deque当前大小
+  size_type size() const noexcept {
+    return end_ - begin_;
+  }
+  size_type max_size() const noexcept {
+    return static_cast<size_type>(-1);
+  }
+  void resize(size_type new_size) {
+    resize(new_size, value_type());
+  }
+  void resize(size_type new_size, const value_type& value);
   void shrink_to_fit() noexcept;
 
   // 访问元素相关操作 
-  reference       operator[](size_type n)
-  {
+  reference operator[](size_type n) {
     YASTL_DEBUG(n < size());
     return begin_[n];
   }
-  const_reference operator[](size_type n) const
-  {
+  const_reference operator[](size_type n) const {
     YASTL_DEBUG(n < size());
     return begin_[n];
   }
 
-  reference       at(size_type n)      
-  { 
+  reference at(size_type n) { 
     THROW_OUT_OF_RANGE_IF(!(n < size()), "deque<T>::at() subscript out of range");
     return (*this)[n];
   }
-  const_reference at(size_type n) const
-  {
+  const_reference at(size_type n) const {
     THROW_OUT_OF_RANGE_IF(!(n < size()), "deque<T>::at() subscript out of range");
     return (*this)[n]; 
   }
 
-  reference       front()
-  {
+  reference front() {
     YASTL_DEBUG(!empty());
     return *begin();
   }
-  const_reference front() const
-  {
+  const_reference front() const {
     YASTL_DEBUG(!empty());
     return *begin();
   }
-  reference       back()
-  {
+  reference back() {
     YASTL_DEBUG(!empty());
-    return *(end() - 1);
+    return *(end() - 1); // end_不放元素 前一个是最后一个
   }
-  const_reference back() const
-  {
+  const_reference back() const {
     YASTL_DEBUG(!empty());
     return *(end() - 1);
   }
@@ -368,49 +381,51 @@ public:
   // 修改容器相关操作
 
   // assign
+  // 公有函数封装
+  void assign(size_type n, const value_type& value) {
+    fill_assign(n, value);
+  }
 
-  void     assign(size_type n, const value_type& value)
-  { fill_assign(n, value); }
+  template <class IIter, typename std::enable_if<yastl::is_input_iterator<IIter>::value, int>::type = 0>
+  void assign(IIter first, IIter last) {
+    copy_assign(first, last, iterator_category(first));
+  }
 
-  template <class IIter, typename std::enable_if<
-    yastl::is_input_iterator<IIter>::value, int>::type = 0>
-  void     assign(IIter first, IIter last)
-  { copy_assign(first, last, iterator_category(first)); }
-
-  void     assign(std::initializer_list<value_type> ilist)
-  { copy_assign(ilist.begin(), ilist.end(), yastl::forward_iterator_tag{}); }
+  void assign(std::initializer_list<value_type> ilist) {
+    copy_assign(ilist.begin(), ilist.end(), yastl::forward_iterator_tag{});
+  }
 
   // emplace_front / emplace_back / emplace
 
   template <class ...Args>
-  void     emplace_front(Args&& ...args);
+  void emplace_front(Args&& ...args);
   template <class ...Args>
-  void     emplace_back(Args&& ...args);
+  void emplace_back(Args&& ...args);
   template <class ...Args>
   iterator emplace(iterator pos, Args&& ...args);
 
   // push_front / push_back
 
-  void     push_front(const value_type& value);
-  void     push_back(const value_type& value);
+  void push_front(const value_type& value);
+  void push_back(const value_type& value);
 
-  void     push_front(value_type&& value) { emplace_front(yastl::move(value)); }
-  void     push_back(value_type&& value)  { emplace_back(yastl::move(value)); }
+  void push_front(value_type&& value) { emplace_front(yastl::move(value)); }
+  void push_back(value_type&& value)  { emplace_back(yastl::move(value)); }
 
   // pop_back / pop_front
 
-  void     pop_front();
-  void     pop_back();
+  void pop_front();
+  void pop_back();
 
   // insert
 
   iterator insert(iterator position, const value_type& value);
   iterator insert(iterator position, value_type&& value);
-  void     insert(iterator position, size_type n, const value_type& value);
-  template <class IIter, typename std::enable_if<
-    yastl::is_input_iterator<IIter>::value, int>::type = 0>
-  void     insert(iterator position, IIter first, IIter last)
-  { insert_dispatch(position, first, last, iterator_category(first)); }
+  void insert(iterator position, size_type n, const value_type& value);
+  template <class IIter, typename std::enable_if<yastl::is_input_iterator<IIter>::value, int>::type = 0>
+  void insert(iterator position, IIter first, IIter last) {
+    insert_dispatch(position, first, last, iterator_category(first));
+  }
 
   // erase /clear
 
@@ -420,46 +435,46 @@ public:
 
   // swap
 
-  void     swap(deque& rhs) noexcept;
+  void swap(deque& rhs) noexcept;
 
 private:
   // helper functions
 
   // create node / destroy node
   map_pointer create_map(size_type size);
-  void        create_buffer(map_pointer nstart, map_pointer nfinish);
-  void        destroy_buffer(map_pointer nstart, map_pointer nfinish);
+  void create_buffer(map_pointer nstart, map_pointer nfinish);
+  void destroy_buffer(map_pointer nstart, map_pointer nfinish);
 
   // initialize
   void map_init(size_type nelem);
-  void        fill_init(size_type n, const value_type& value);
+  void fill_init(size_type n, const value_type& value);
   template <class IIter>
-  void        copy_init(IIter, IIter, input_iterator_tag);
+  void copy_init(IIter, IIter, input_iterator_tag);
   template <class FIter>
-  void        copy_init(FIter, FIter, forward_iterator_tag);
+  void copy_init(FIter, FIter, forward_iterator_tag);
 
   // assign
-  void        fill_assign(size_type n, const value_type& value);
+  void fill_assign(size_type n, const value_type& value);
   template <class IIter>
-  void        copy_assign(IIter first, IIter last, input_iterator_tag);
+  void copy_assign(IIter first, IIter last, input_iterator_tag);
   template <class FIter>
-  void        copy_assign(FIter first, FIter last, forward_iterator_tag);
+  void copy_assign(FIter first, FIter last, forward_iterator_tag);
 
   // insert
   template <class... Args>
-  iterator    insert_aux(iterator position, Args&& ...args);
-  void        fill_insert(iterator position, size_type n, const value_type& x);
+  iterator insert_aux(iterator position, Args&& ...args);
+  void fill_insert(iterator position, size_type n, const value_type& x);
   template <class FIter>
-  void        copy_insert(iterator, FIter, FIter, size_type);
+  void copy_insert(iterator, FIter, FIter, size_type);
   template <class IIter>
-  void        insert_dispatch(iterator, IIter, IIter, input_iterator_tag);
+  void insert_dispatch(iterator, IIter, IIter, input_iterator_tag);
   template <class FIter>
-  void        insert_dispatch(iterator, FIter, FIter, forward_iterator_tag);
+  void insert_dispatch(iterator, FIter, FIter, forward_iterator_tag);
 
   // reallocate
-  void        require_capacity(size_type n, bool front);
-  void        reallocate_map_at_front(size_type need);
-  void        reallocate_map_at_back(size_type need);
+  void require_capacity(size_type n, bool front);
+  void reallocate_map_at_front(size_type need);
+  void reallocate_map_at_back(size_type need);
 
 };
 
@@ -467,17 +482,12 @@ private:
 
 // 复制赋值运算符
 template <class T>
-deque<T>& deque<T>::operator=(const deque& rhs)
-{
-  if (this != &rhs)
-  {
+deque<T>& deque<T>::operator=(const deque& rhs) {
+  if (this != &rhs) {
     const auto len = size();
-    if (len >= rhs.size())
-    {
+    if (len >= rhs.size()) {
       erase(yastl::copy(rhs.begin_, rhs.end_, begin_), end_);
-    }
-    else
-    {
+    } else {
       iterator mid = rhs.begin() + static_cast<difference_type>(len);
       yastl::copy(rhs.begin_, mid, begin_);
       insert(end_, mid, rhs.end_);
@@ -488,29 +498,24 @@ deque<T>& deque<T>::operator=(const deque& rhs)
 
 // 移动赋值运算符
 template <class T>
-deque<T>& deque<T>::operator=(deque&& rhs)
-{
+deque<T>& deque<T>::operator=(deque&& rhs) {
   clear();
   begin_ = yastl::move(rhs.begin_);
   end_ = yastl::move(rhs.end_);
   map_ = rhs.map_;
   map_size_ = rhs.map_size_;
-  rhs.map_ = nullptr;
+  rhs.map_ = nullptr; // 右值赋值为空防止double free
   rhs.map_size_ = 0;
   return *this;
 }
 
 // 重置容器大小
 template <class T>
-void deque<T>::resize(size_type new_size, const value_type& value)
-{
+void deque<T>::resize(size_type new_size, const value_type& value) {
   const auto len = size();
-  if (new_size < len)
-  {
+  if (new_size < len) { // 少则插入，多则删除
     erase(begin_ + new_size, end_);
-  }
-  else
-  {
+  } else {
     insert(end_, new_size - len, value);
   }
 }
@@ -534,18 +539,13 @@ void deque<T>::shrink_to_fit() noexcept {
 // 在头部就地构建元素
 template <class T>
 template <class ...Args>
-void deque<T>::emplace_front(Args&& ...args)
-{
-  if (begin_.cur != begin_.first)
-  {
+void deque<T>::emplace_front(Args&& ...args) {
+  if (begin_.cur != begin_.first) {
     data_allocator::construct(begin_.cur - 1, yastl::forward<Args>(args)...);
     --begin_.cur;
-  }
-  else
-  {
+  } else {
     require_capacity(1, true);
-    try
-    {
+    try {
       --begin_;
       data_allocator::construct(begin_.cur, yastl::forward<Args>(args)...);
     }
@@ -560,16 +560,12 @@ void deque<T>::emplace_front(Args&& ...args)
 // 在尾部就地构建元素
 template <class T>
 template <class ...Args>
-void deque<T>::emplace_back(Args&& ...args)
-{
-  if (end_.cur != end_.last - 1)
-  {
+void deque<T>::emplace_back(Args&& ...args) {
+  if (end_.cur != end_.last - 1) { // 空间还够
     data_allocator::construct(end_.cur, yastl::forward<Args>(args)...);
     ++end_.cur;
-  }
-  else
-  {
-    require_capacity(1, false);
+  } else {
+    require_capacity(1, false); // 空间不够了 重新分配map和buffer(也许)
     data_allocator::construct(end_.cur, yastl::forward<Args>(args)...);
     ++end_;
   }
@@ -578,15 +574,11 @@ void deque<T>::emplace_back(Args&& ...args)
 // 在 pos 位置就地构建元素
 template <class T>
 template <class ...Args>
-typename deque<T>::iterator deque<T>::emplace(iterator pos, Args&& ...args)
-{
-  if (pos.cur == begin_.cur)
-  {
+typename deque<T>::iterator deque<T>::emplace(iterator pos, Args&& ...args) {
+  if (pos.cur == begin_.cur) {
     emplace_front(yastl::forward<Args>(args)...);
     return begin_;
-  }
-  else if (pos.cur == end_.cur)
-  {
+  } else if (pos.cur == end_.cur) {
     emplace_back(yastl::forward<Args>(args)...);
     return end_ - 1;
   }
@@ -595,23 +587,16 @@ typename deque<T>::iterator deque<T>::emplace(iterator pos, Args&& ...args)
 
 // 在头部插入元素
 template <class T>
-void deque<T>::push_front(const value_type& value)
-{
-  if (begin_.cur != begin_.first)
-  {
+void deque<T>::push_front(const value_type& value) {
+  if (begin_.cur != begin_.first) {
     data_allocator::construct(begin_.cur - 1, value);
     --begin_.cur;
-  }
-  else
-  {
+  } else {
     require_capacity(1, true);
-    try
-    {
+    try {
       --begin_;
       data_allocator::construct(begin_.cur, value);
-    }
-    catch (...)
-    {
+    } catch (...) {
       ++begin_;
       throw;
     }
@@ -620,15 +605,11 @@ void deque<T>::push_front(const value_type& value)
 
 // 在尾部插入元素
 template <class T>
-void deque<T>::push_back(const value_type& value)
-{
-  if (end_.cur != end_.last - 1)
-  {
+void deque<T>::push_back(const value_type& value) {
+  if (end_.cur != end_.last - 1) {
     data_allocator::construct(end_.cur, value);
     ++end_.cur;
-  }
-  else
-  {
+  } else {
     require_capacity(1, false);
     data_allocator::construct(end_.cur, value);
     ++end_;
@@ -637,16 +618,12 @@ void deque<T>::push_back(const value_type& value)
 
 // 弹出头部元素
 template <class T>
-void deque<T>::pop_front()
-{
+void deque<T>::pop_front() {
   YASTL_DEBUG(!empty());
-  if (begin_.cur != begin_.last - 1)
-  {
+  if (begin_.cur != begin_.last - 1) {
     data_allocator::destroy(begin_.cur);
     ++begin_.cur;
-  }
-  else
-  {
+  } else { // 是begin_.last - 1了 删了这个元素此node和对应buffer也应该删除
     data_allocator::destroy(begin_.cur);
     ++begin_;
     destroy_buffer(begin_.node - 1, begin_.node - 1);
@@ -655,106 +632,78 @@ void deque<T>::pop_front()
 
 // 弹出尾部元素
 template <class T>
-void deque<T>::pop_back()
-{
+void deque<T>::pop_back() {
   YASTL_DEBUG(!empty());
-  if (end_.cur != end_.first)
-  {
+  if (end_.cur != end_.first) {
     --end_.cur;
     data_allocator::destroy(end_.cur);
-  }
-  else
-  {
+  } else { // 删了这个元素此node和对应buffer也应该删除
     --end_;
     data_allocator::destroy(end_.cur);
     destroy_buffer(end_.node + 1, end_.node + 1);
   }
 }
 
-// 在 position 处插入元素
+// 在 position 处插入元素，拷贝构造
 template <class T>
-typename deque<T>::iterator
-deque<T>::insert(iterator position, const value_type& value)
-{
-  if (position.cur == begin_.cur)
-  {
+typename deque<T>::iterator deque<T>::insert(iterator position, const value_type& value) {
+  if (position.cur == begin_.cur) {
     push_front(value);
     return begin_;
-  }
-  else if (position.cur == end_.cur)
-  {
+  } else if (position.cur == end_.cur) {
     push_back(value);
     auto tmp = end_;
     --tmp;
     return tmp;
-  }
-  else
-  {
+  } else {
     return insert_aux(position, value);
   }
 }
 
+// 在 position 处插入元素，右值构造
 template <class T>
-typename deque<T>::iterator
-deque<T>::insert(iterator position, value_type&& value)
-{
-  if (position.cur == begin_.cur)
-  {
+typename deque<T>::iterator deque<T>::insert(iterator position, value_type&& value) {
+  if (position.cur == begin_.cur) {
     emplace_front(yastl::move(value));
     return begin_;
-  }
-  else if (position.cur == end_.cur)
-  {
+  } else if (position.cur == end_.cur) {
     emplace_back(yastl::move(value));
     auto tmp = end_;
     --tmp;
     return tmp;
-  }
-  else
-  {
+  } else {
     return insert_aux(position, yastl::move(value));
   }
 }
 
 // 在 position 位置插入 n 个元素
 template <class T>
-void deque<T>::insert(iterator position, size_type n, const value_type& value)
-{
-  if (position.cur == begin_.cur)
-  {
+void deque<T>::insert(iterator position, size_type n, const value_type& value) {
+  if (position.cur == begin_.cur) {
     require_capacity(n, true);
     auto new_begin = begin_ - n;
     yastl::uninitialized_fill_n(new_begin, n, value);
     begin_ = new_begin;
-  }
-  else if (position.cur == end_.cur)
-  {
+  } else if (position.cur == end_.cur) {
     require_capacity(n, false);
     auto new_end = end_ + n;
     yastl::uninitialized_fill_n(end_, n, value);
     end_ = new_end;
-  }
-  else
-  {
+  } else {
     fill_insert(position, n, value);
   }
 }
 
 // 删除 position 处的元素
 template <class T>
-typename deque<T>::iterator
-deque<T>::erase(iterator position)
-{
+typename deque<T>::iterator deque<T>::erase(iterator position) {
   auto next = position;
   ++next;
   const size_type elems_before = position - begin_;
-  if (elems_before < (size() / 2))
-  {
+  if (elems_before < (size() / 2)) { // 前面剩的比较少，挪动前面
     yastl::copy_backward(begin_, position, next);
     pop_front();
-  }
-  else
-  {
+  } else { // 后面剩的少，挪动后面
     yastl::copy(next, end_, position);
     pop_back();
   }
@@ -763,27 +712,19 @@ deque<T>::erase(iterator position)
 
 // 删除[first, last)上的元素
 template <class T>
-typename deque<T>::iterator
-deque<T>::erase(iterator first, iterator last)
-{
-  if (first == begin_ && last == end_)
-  {
+typename deque<T>::iterator deque<T>::erase(iterator first, iterator last) {
+  if (first == begin_ && last == end_) {
     clear();
     return end_;
-  }
-  else
-  {
+  } else {
     const size_type len = last - first;
     const size_type elems_before = first - begin_;
-    if (elems_before < ((size() - len) / 2))
-    {
+    if (elems_before < ((size() - len) / 2)) { // 前面剩的比较少，挪动前面
       yastl::copy_backward(begin_, first, last);
       auto new_begin = begin_ + len;
       data_allocator::destroy(begin_.cur, new_begin.cur);
       begin_ = new_begin;
-    }
-    else
-    {
+    } else { // 后面剩的少，挪动后面
       yastl::copy(last, end_, first);
       auto new_end = end_ - len;
       data_allocator::destroy(new_end.cur, end_.cur);
@@ -939,20 +880,15 @@ copy_init(FIter first, FIter last, forward_iterator_tag)
   yastl::uninitialized_copy(first, last, end_.first);
 }
 
-// fill_assign 函数
+// fill_assign 函数,让当前deque大小变为n，并且全部填充上value
 template <class T>
-void deque<T>::
-fill_assign(size_type n, const value_type& value)
-{
-  if (n > size())
-  {
-    yastl::fill(begin(), end(), value);
-    insert(end(), n - size(), value);
-  }
-  else
-  {
-    erase(begin() + n, end());
-    yastl::fill(begin(), end(), value);
+void deque<T>::fill_assign(size_type n, const value_type& value) {
+  if (n > size()) {
+    yastl::fill(begin(), end(), value); // 先把目前的给填充上
+    insert(end(), n - size(), value); // 额外插入
+  } else {
+    erase(begin() + n, end()); // 多的给删掉
+    yastl::fill(begin(), end(), value); // 剩余部分赋值
   }
 }
 
@@ -960,40 +896,30 @@ fill_assign(size_type n, const value_type& value)
 template <class T>
 template <class IIter>
 void deque<T>::
-copy_assign(IIter first, IIter last, input_iterator_tag)
-{
+copy_assign(IIter first, IIter last, input_iterator_tag) {
   auto first1 = begin();
   auto last1 = end();
-  for (; first != last && first1 != last1; ++first, ++first1)
-  {
+  for (; first != last && first1 != last1; ++first, ++first1) {
     *first1 = *first;
   }
-  if (first1 != last1)
-  {
+  if (first1 != last1) { // 删除多余的
     erase(first1, last1);
-  }
-  else
-  {
+  } else {
     insert_dispatch(end_, first, last, input_iterator_tag{});
   }
 }
 
 template <class T>
 template <class FIter>
-void deque<T>::
-copy_assign(FIter first, FIter last, forward_iterator_tag)
-{  
+void deque<T>::copy_assign(FIter first, FIter last, forward_iterator_tag) {  
   const size_type len1 = size();
   const size_type len2 = yastl::distance(first, last);
-  if (len1 < len2)
-  {
+  if (len1 < len2) { // 需要额外插入
     auto next = first;
     yastl::advance(next, len1);
     yastl::copy(first, next, begin_);
     insert_dispatch(end_, next, last, forward_iterator_tag{});
-  }
-  else
-  {
+  } else { // 拷贝，并删除多余的
     erase(yastl::copy(first, last, begin_), end_);
   }
 }
@@ -1190,14 +1116,13 @@ copy_insert(iterator position, FIter first, FIter last, size_type n)
 // insert_dispatch 函数
 template <class T>
 template <class IIter>
-void deque<T>::
-insert_dispatch(iterator position, IIter first, IIter last, input_iterator_tag)
-{
-  if (last <= first)  return;
+void deque<T>::insert_dispatch(iterator position, IIter first, IIter last, input_iterator_tag) {
+  if (last <= first) {
+    return;
+  }
   const size_type n = yastl::distance(first, last);
   const size_type elems_before = position - begin_;
-  if (elems_before < (size() / 2))
-  {
+  if (elems_before < (size() / 2)) {
     require_capacity(n, true);
   }
   else
@@ -1257,25 +1182,19 @@ insert_dispatch(iterator position, FIter first, FIter last, forward_iterator_tag
   }
 }
 
-// require_capacity 函数
+// require_capacity 函数, 分配n个空间出来并创建对应map和buffer
 template <class T>
-void deque<T>::require_capacity(size_type n, bool front)
-{
-  if (front && (static_cast<size_type>(begin_.cur - begin_.first) < n))
-  {
+void deque<T>::require_capacity(size_type n, bool front) {
+  if (front && (static_cast<size_type>(begin_.cur - begin_.first) < n)) { // 在前面分配
     const size_type need_buffer = (n - (begin_.cur - begin_.first)) / buffer_size + 1;
-    if (need_buffer > static_cast<size_type>(begin_.node - map_))
-    {
+    if (need_buffer > static_cast<size_type>(begin_.node - map_)) { // 需要的node数不够了
       reallocate_map_at_front(need_buffer);
       return;
     }
     create_buffer(begin_.node - need_buffer, begin_.node - 1);
-  }
-  else if (!front && (static_cast<size_type>(end_.last - end_.cur - 1) < n))
-  {
+  } else if (!front && (static_cast<size_type>(end_.last - end_.cur - 1) < n)) { // 在后面分配
     const size_type need_buffer = (n - (end_.last - end_.cur - 1)) / buffer_size + 1;
-    if (need_buffer > static_cast<size_type>((map_ + map_size_) - end_.node - 1))
-    {
+    if (need_buffer > static_cast<size_type>((map_ + map_size_) - end_.node - 1)) {
       reallocate_map_at_back(need_buffer);
       return;
     }
@@ -1283,12 +1202,10 @@ void deque<T>::require_capacity(size_type n, bool front)
   }
 }
 
-// reallocate_map_at_front 函数
+// reallocate_map_at_front 函数, node数不够了在前面分配node
 template <class T>
-void deque<T>::reallocate_map_at_front(size_type need_buffer)
-{
-  const size_type new_map_size = yastl::max(map_size_ << 1,
-                                            map_size_ + need_buffer + DEQUE_MAP_INIT_SIZE);
+void deque<T>::reallocate_map_at_front(size_type need_buffer) {
+  const size_type new_map_size = yastl::max(map_size_ << 1, map_size_ + need_buffer + DEQUE_MAP_INIT_SIZE);
   map_pointer new_map = create_map(new_map_size);
   const size_type old_buffer = end_.node - begin_.node + 1;
   const size_type new_buffer = old_buffer + need_buffer;
@@ -1298,8 +1215,9 @@ void deque<T>::reallocate_map_at_front(size_type need_buffer)
   auto mid = begin + need_buffer;
   auto end = mid + old_buffer;
   create_buffer(begin, mid - 1);
-  for (auto begin1 = mid, begin2 = begin_.node; begin1 != end; ++begin1, ++begin2)
+  for (auto begin1 = mid, begin2 = begin_.node; begin1 != end; ++begin1, ++begin2) {
     *begin1 = *begin2;
+  }
 
   // 更新数据
   map_allocator::deallocate(map_, map_size_);
@@ -1309,12 +1227,10 @@ void deque<T>::reallocate_map_at_front(size_type need_buffer)
   end_ = iterator(*(end - 1) + (end_.cur - end_.first), end - 1);
 }
 
-// reallocate_map_at_back 函数
+// reallocate_map_at_back 函数, node数不够了，在后面分配node
 template <class T>
-void deque<T>::reallocate_map_at_back(size_type need_buffer)
-{
-  const size_type new_map_size = yastl::max(map_size_ << 1,
-                                            map_size_ + need_buffer + DEQUE_MAP_INIT_SIZE);
+void deque<T>::reallocate_map_at_back(size_type need_buffer) {
+  const size_type new_map_size = yastl::max(map_size_ << 1, map_size_ + need_buffer + DEQUE_MAP_INIT_SIZE);
   map_pointer new_map = create_map(new_map_size);
   const size_type old_buffer = end_.node - begin_.node + 1;
   const size_type new_buffer = old_buffer + need_buffer;
@@ -1323,8 +1239,9 @@ void deque<T>::reallocate_map_at_back(size_type need_buffer)
   auto begin = new_map + ((new_map_size - new_buffer) / 2);
   auto mid = begin + old_buffer;
   auto end = mid + need_buffer;
-  for (auto begin1 = begin, begin2 = begin_.node; begin1 != mid; ++begin1, ++begin2)
+  for (auto begin1 = begin, begin2 = begin_.node; begin1 != mid; ++begin1, ++begin2) {
     *begin1 = *begin2;
+  }
   create_buffer(mid, end - 1);
 
   // 更新数据
