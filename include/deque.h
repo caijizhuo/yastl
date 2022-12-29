@@ -797,13 +797,10 @@ void deque<T>::create_buffer(map_pointer nstart, map_pointer nfinish) {
   }
 }
 
-// destroy_buffer 函数
+// destroy_buffer 函数，销毁map所指的buffer
 template <class T>
-void deque<T>::
-destroy_buffer(map_pointer nstart, map_pointer nfinish)
-{
-  for (map_pointer n = nstart; n <= nfinish; ++n)
-  {
+void deque<T>::destroy_buffer(map_pointer nstart, map_pointer nfinish) {
+  for (map_pointer n = nstart; n <= nfinish; ++n) {
     data_allocator::deallocate(*n, buffer_size);
     *n = nullptr;
   }
@@ -851,27 +848,23 @@ void deque<T>::fill_init(size_type n, const value_type& value) {
   }
 }
 
-// copy_init 函数
+// copy_init 函数， 把[first, last)内容拷贝构造到一个新deque中
 template <class T>
 template <class IIter>
-void deque<T>::
-copy_init(IIter first, IIter last, input_iterator_tag)
-{
+void deque<T>::copy_init(IIter first, IIter last, input_iterator_tag) {
   const size_type n = yastl::distance(first, last);
-  map_init(n);
-  for (; first != last; ++first)
-    emplace_back(*first);
+  map_init(n); // 初始化map
+  for (; first != last; ++first) {
+    emplace_back(*first); // 把内容依次插入
+  } 
 }
 
 template <class T>
 template <class FIter>
-void deque<T>::
-copy_init(FIter first, FIter last, forward_iterator_tag)
-{
+void deque<T>::copy_init(FIter first, FIter last, forward_iterator_tag) {
   const size_type n = yastl::distance(first, last);
   map_init(n);
-  for (auto cur = begin_.node; cur < end_.node; ++cur)
-  {
+  for (auto cur = begin_.node; cur < end_.node; ++cur) {
     auto next = first;
     yastl::advance(next, buffer_size);
     yastl::uninitialized_copy(first, next, *cur);
@@ -895,8 +888,7 @@ void deque<T>::fill_assign(size_type n, const value_type& value) {
 // copy_assign 函数
 template <class T>
 template <class IIter>
-void deque<T>::
-copy_assign(IIter first, IIter last, input_iterator_tag) {
+void deque<T>::copy_assign(IIter first, IIter last, input_iterator_tag) {
   auto first1 = begin();
   auto last1 = end();
   for (; first != last && first1 != last1; ++first, ++first1) {
@@ -927,14 +919,10 @@ void deque<T>::copy_assign(FIter first, FIter last, forward_iterator_tag) {
 // insert_aux 函数
 template <class T>
 template <class... Args>
-typename deque<T>::iterator
-deque<T>::
-insert_aux(iterator position, Args&& ...args)
-{
+typename deque<T>::iterator deque<T>::insert_aux(iterator position, Args&& ...args) {
   const size_type elems_before = position - begin_;
   value_type value_copy = value_type(yastl::forward<Args>(args)...);
-  if (elems_before < (size() / 2))
-  { // 在前半段插入
+  if (elems_before < (size() / 2)) { // 在前半段插入
     emplace_front(front());
     auto front1 = begin_;
     ++front1;
@@ -944,9 +932,7 @@ insert_aux(iterator position, Args&& ...args)
     auto pos = position;
     ++pos;
     yastl::copy(front2, pos, front1);
-  }
-  else
-  { // 在后半段插入
+  } else { // 在后半段插入
     emplace_back(back());
     auto back1 = end_;
     --back1;
@@ -961,72 +947,55 @@ insert_aux(iterator position, Args&& ...args)
 
 // fill_insert 函数
 template <class T>
-void deque<T>::
-fill_insert(iterator position, size_type n, const value_type& value)
-{
+void deque<T>::fill_insert(iterator position, size_type n, const value_type& value) {
   const size_type elems_before = position - begin_;
   const size_type len = size();
   auto value_copy = value;
-  if (elems_before < (len / 2))
-  {
+  if (elems_before < (len / 2)) {
     require_capacity(n, true);
     // 原来的迭代器可能会失效
     auto old_begin = begin_;
     auto new_begin = begin_ - n;
     position = begin_ + elems_before;
-    try
-    {
-      if (elems_before >= n)
-      {
+    try {
+      if (elems_before >= n) {
         auto begin_n = begin_ + n;
         yastl::uninitialized_copy(begin_, begin_n, new_begin);
         begin_ = new_begin;
         yastl::copy(begin_n, position, old_begin);
         yastl::fill(position - n, position, value_copy);
-      }
-      else
-      {
-        yastl::uninitialized_fill(
-          yastl::uninitialized_copy(begin_, position, new_begin), begin_, value_copy);
+      } else {
+        yastl::uninitialized_fill(yastl::uninitialized_copy(begin_, position, new_begin), begin_, value_copy);
         begin_ = new_begin;
         yastl::fill(old_begin, position, value_copy);
       }
-    }
-    catch (...)
-    {
-      if (new_begin.node != begin_.node)
+    } catch (...) {
+      if (new_begin.node != begin_.node) {
         destroy_buffer(new_begin.node, begin_.node - 1);
+      }
       throw;
     }
-  }
-  else
-  {
+  } else {
     require_capacity(n, false);
     // 原来的迭代器可能会失效
     auto old_end = end_;
     auto new_end = end_ + n;
     const size_type elems_after = len - elems_before;
     position = end_ - elems_after;
-    try
-    {
-      if (elems_after > n)
-      {
+    try {
+      if (elems_after > n) {
         auto end_n = end_ - n;
         yastl::uninitialized_copy(end_n, end_, end_);
         end_ = new_end;
         yastl::copy_backward(position, end_n, old_end);
         yastl::fill(position, position + n, value_copy);
-      }
-      else
-      {
+      } else {
         yastl::uninitialized_fill(end_, position + n, value_copy);
         yastl::uninitialized_copy(position, end_, position + n);
         end_ = new_end;
         yastl::fill(position, old_end, value_copy);
       }
-    }
-    catch (...)
-    {
+    } catch (...) {
       if(new_end.node != end_.node)
         destroy_buffer(end_.node + 1, new_end.node);
       throw;
@@ -1037,30 +1006,23 @@ fill_insert(iterator position, size_type n, const value_type& value)
 // copy_insert
 template <class T>
 template <class FIter>
-void deque<T>::
-copy_insert(iterator position, FIter first, FIter last, size_type n)
-{
+void deque<T>::copy_insert(iterator position, FIter first, FIter last, size_type n) {
   const size_type elems_before = position - begin_;
   auto len = size();
-  if (elems_before < (len / 2))
-  {
+  if (elems_before < (len / 2)) { // 挪前面
     require_capacity(n, true);
     // 原来的迭代器可能会失效
     auto old_begin = begin_;
     auto new_begin = begin_ - n;
     position = begin_ + elems_before;
-    try
-    {
-      if (elems_before >= n)
-      {
+    try {
+      if (elems_before >= n) {
         auto begin_n = begin_ + n;
         yastl::uninitialized_copy(begin_, begin_n, new_begin);
         begin_ = new_begin;
         yastl::copy(begin_n, position, old_begin);
         yastl::copy(first, last, position - n);
-      }
-      else
-      {
+      } else {
         auto mid = first;
         yastl::advance(mid, n - elems_before);
         yastl::uninitialized_copy(first, mid,
@@ -1068,34 +1030,27 @@ copy_insert(iterator position, FIter first, FIter last, size_type n)
         begin_ = new_begin;
         yastl::copy(mid, last, old_begin);
       }
-    }
-    catch (...)
-    {
-      if(new_begin.node != begin_.node)
+    } catch (...) {
+      if(new_begin.node != begin_.node) {
         destroy_buffer(new_begin.node, begin_.node - 1);
+      }
       throw;
     }
-  }
-  else
-  {
+  } else {
     require_capacity(n, false);
     // 原来的迭代器可能会失效
     auto old_end = end_;
     auto new_end = end_ + n;
     const auto elems_after = len - elems_before;
     position = end_ - elems_after;
-    try
-    {
-      if (elems_after > n)
-      {
+    try {
+      if (elems_after > n) {
         auto end_n = end_ - n;
         yastl::uninitialized_copy(end_n, end_, end_);
         end_ = new_end;
         yastl::copy_backward(position, end_n, old_end);
         yastl::copy(first, last, position);
-      }
-      else
-      {
+      } else {
         auto mid = first;
         yastl::advance(mid, elems_after);
         yastl::uninitialized_copy(position, end_,
@@ -1103,11 +1058,10 @@ copy_insert(iterator position, FIter first, FIter last, size_type n)
         end_ = new_end;
         yastl::copy(first, mid, position);
       }
-    }
-    catch (...)
-    {
-      if(new_end.node != end_.node)
+    } catch (...) {
+      if(new_end.node != end_.node) {
         destroy_buffer(end_.node + 1, new_end.node);
+      }
       throw;
     }
   }
@@ -1124,15 +1078,12 @@ void deque<T>::insert_dispatch(iterator position, IIter first, IIter last, input
   const size_type elems_before = position - begin_;
   if (elems_before < (size() / 2)) {
     require_capacity(n, true);
-  }
-  else
-  {
+  } else {
     require_capacity(n, false);
   }
   position = begin_ + elems_before;
   auto cur = --last;
-  for (size_type i = 0; i < n; ++i, --cur)
-  {
+  for (size_type i = 0; i < n; ++i, --cur) {
     insert(position, *cur);
   }
 }
@@ -1142,42 +1093,35 @@ template <class FIter>
 void deque<T>::
 insert_dispatch(iterator position, FIter first, FIter last, forward_iterator_tag)
 {
-  if (last <= first)  return;
+  if (last <= first) {
+    return;
+  }
   const size_type n = yastl::distance(first, last);
-  if (position.cur == begin_.cur)
-  {
+  if (position.cur == begin_.cur) {
     require_capacity(n, true);
     auto new_begin = begin_ - n;
-    try
-    {
+    try {
       yastl::uninitialized_copy(first, last, new_begin);
       begin_ = new_begin;
-    }
-    catch (...)
-    {
-      if(new_begin.node != begin_.node)
+    } catch (...) {
+      if(new_begin.node != begin_.node) {
         destroy_buffer(new_begin.node, begin_.node - 1);
+      }
       throw;
     }
-  }
-  else if (position.cur == end_.cur)
-  {
+  } else if (position.cur == end_.cur) {
     require_capacity(n, false);
     auto new_end = end_ + n;
-    try
-    {
+    try {
       yastl::uninitialized_copy(first, last, end_);
       end_ = new_end;
-    }
-    catch (...)
-    {
-      if(new_end.node != end_.node)
+    } catch (...) {
+      if (new_end.node != end_.node) {
         destroy_buffer(end_.node + 1, new_end.node);
+      }
       throw;
     }
-  }
-  else
-  {
+  } else {
     copy_insert(position, first, last, n);
   }
 }
@@ -1254,47 +1198,40 @@ void deque<T>::reallocate_map_at_back(size_type need_buffer) {
 
 // 重载比较操作符
 template <class T>
-bool operator==(const deque<T>& lhs, const deque<T>& rhs)
-{
+bool operator==(const deque<T>& lhs, const deque<T>& rhs) {
   return lhs.size() == rhs.size() && 
     yastl::equal(lhs.begin(), lhs.end(), rhs.begin());
 }
 
 template <class T>
-bool operator<(const deque<T>& lhs, const deque<T>& rhs)
-{
+bool operator<(const deque<T>& lhs, const deque<T>& rhs) {
   return yastl::lexicographical_compare(
     lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
 }
 
 template <class T>
-bool operator!=(const deque<T>& lhs, const deque<T>& rhs)
-{
+bool operator!=(const deque<T>& lhs, const deque<T>& rhs) {
   return !(lhs == rhs);
 }
 
 template <class T>
-bool operator>(const deque<T>& lhs, const deque<T>& rhs)
-{
+bool operator>(const deque<T>& lhs, const deque<T>& rhs) {
   return rhs < lhs;
 }
 
 template <class T>
-bool operator<=(const deque<T>& lhs, const deque<T>& rhs)
-{
+bool operator<=(const deque<T>& lhs, const deque<T>& rhs) {
   return !(rhs < lhs);
 }
 
 template <class T>
-bool operator>=(const deque<T>& lhs, const deque<T>& rhs)
-{
+bool operator>=(const deque<T>& lhs, const deque<T>& rhs) {
   return !(lhs < rhs);
 }
 
 // 重载 yastl 的 swap
 template <class T>
-void swap(deque<T>& lhs, deque<T>& rhs)
-{
+void swap(deque<T>& lhs, deque<T>& rhs) {
   lhs.swap(rhs);
 }
 
