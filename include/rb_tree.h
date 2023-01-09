@@ -378,7 +378,7 @@ void rb_tree_set_red(NodePtr& node) noexcept {
   node->color = rb_tree_red;
 }
 
-// 返回node的下一个节点，功能存疑
+// 返回node的下一个节点，中序遍历的后一个节点
 template <class NodePtr>
 NodePtr rb_tree_next(NodePtr node) noexcept {
   if (node->right != nullptr) { // 有右孩子，是右子树的最小值
@@ -399,7 +399,7 @@ NodePtr rb_tree_next(NodePtr node) noexcept {
 |      / \                   / \          |
 |     b   c                 a   b         |
 \*---------------------------------------*/
-// 左旋，参数一为左旋点，参数二为根节点
+// 左旋，并不染色，参数一为左旋点，参数二为根节点，传值为引用，当涉及根节点变动时需要操作
 template <class NodePtr>
 void rb_tree_rotate_left(NodePtr x, NodePtr& root) noexcept {
   auto y = x->right;  // y 为 x 的右子节点
@@ -430,26 +430,21 @@ void rb_tree_rotate_left(NodePtr x, NodePtr& root) noexcept {
 |    / \                           / \     |
 |   b   c                         c   a    |
 \*----------------------------------------*/
-// 右旋，参数一为右旋点，参数二为根节点
+// 右旋，参数一为右旋点，参数二为根节点,x调整前是哪个节点调增后就是哪个节点
 template <class NodePtr>
-void rb_tree_rotate_right(NodePtr x, NodePtr& root) noexcept
-{
+void rb_tree_rotate_right(NodePtr x, NodePtr& root) noexcept {
   auto y = x->left;
   x->left = y->right;
-  if (y->right)
+  if (y->right) { // 如果y有右孩子，要更新他的parent信息
     y->right->parent = x;
+  }
   y->parent = x->parent;
-
-  if (x == root)
-  { // 如果 x 为根节点，让 y 顶替 x 成为根节点
+  // 下面三个判断用于更新x节点的父亲的信息
+  if (x == root) { // 如果 x 为根节点，让 y 顶替 x 成为根节点
     root = y;
-  }
-  else if (rb_tree_is_lchild(x))
-  { // 如果 x 是右子节点
+  } else if (rb_tree_is_lchild(x)) { // 如果 x 是右子节点
     x->parent->left = y;
-  }
-  else
-  { // 如果 x 是左子节点
+  } else { // 如果 x 是左子节点
     x->parent->right = y;
   }
   // 调整 x 与 y 的关系
@@ -471,50 +466,37 @@ void rb_tree_rotate_right(NodePtr x, NodePtr& root) noexcept
 // 参考博客: http://blog.csdn.net/v_JULY_v/article/details/6105630
 //          http://blog.csdn.net/v_JULY_v/article/details/6109153
 template <class NodePtr>
-void rb_tree_insert_rebalance(NodePtr x, NodePtr& root) noexcept
-{
+void rb_tree_insert_rebalance(NodePtr x, NodePtr& root) noexcept {
   rb_tree_set_red(x);  // 新增节点为红色
-  while (x != root && rb_tree_is_red(x->parent))
-  {
-    if (rb_tree_is_lchild(x->parent))
-    { // 如果父节点是左子节点
+  while (x != root && rb_tree_is_red(x->parent)) { // 因为插入节点为红色，所以要直到父亲为黑色
+    if (rb_tree_is_lchild(x->parent)) { // 如果父节点是左子节点
       auto uncle = x->parent->parent->right;
-      if (uncle != nullptr && rb_tree_is_red(uncle))
-      { // case 3: 父节点和叔叔节点都为红
-        rb_tree_set_black(x->parent);
-        rb_tree_set_black(uncle);
+      if (uncle != nullptr && rb_tree_is_red(uncle)) { // case 3: 父节点和叔叔节点都为红
+        rb_tree_set_black(x->parent); // 父亲设为黑
+        rb_tree_set_black(uncle); // 叔叔设为黑
         x = x->parent->parent;
-        rb_tree_set_red(x);
-      }
-      else
-      { // 无叔叔节点或叔叔节点为黑
-        if (!rb_tree_is_lchild(x))
-        { // case 4: 当前节点 x 为右子节点
+        rb_tree_set_red(x); // 爷爷设为红，继续看爷爷的颜色状态
+      } else { // 无叔叔节点或叔叔节点为黑，需要旋转
+        if (!rb_tree_is_lchild(x)) { // case 4: 当前节点 x 为右子节点  内测插入
           x = x->parent;
-          rb_tree_rotate_left(x, root);
+          rb_tree_rotate_left(x, root); // 上移并且左旋
         }
         // 都转换成 case 5： 当前节点为左子节点
-        rb_tree_set_black(x->parent);
-        rb_tree_set_red(x->parent->parent);
-        rb_tree_rotate_right(x->parent->parent, root);
+        rb_tree_set_black(x->parent); // 插入节点变黑
+        rb_tree_set_red(x->parent->parent); // 爷爷变红
+        rb_tree_rotate_right(x->parent->parent, root); // 对爷爷右旋
         break;
       }
-    }
-    else  // 如果父节点是右子节点，对称处理
-    { 
+    } else { // 如果父节点是右子节点，对称处理
       auto uncle = x->parent->parent->left;
-      if (uncle != nullptr && rb_tree_is_red(uncle))
-      { // case 3: 父节点和叔叔节点都为红
+      if (uncle != nullptr && rb_tree_is_red(uncle)) { // case 3: 父节点和叔叔节点都为红
         rb_tree_set_black(x->parent);
         rb_tree_set_black(uncle);
         x = x->parent->parent;
         rb_tree_set_red(x);
         // 此时祖父节点为红，可能会破坏红黑树的性质，令当前节点为祖父节点，继续处理
-      }
-      else
-      { // 无叔叔节点或叔叔节点为黑
-        if (rb_tree_is_lchild(x))
-        { // case 4: 当前节点 x 为左子节点
+      } else { // 无叔叔节点或叔叔节点为黑
+        if (rb_tree_is_lchild(x)) { // case 4: 当前节点 x 为左子节点
           x = x->parent;
           rb_tree_rotate_right(x, root);
         }
@@ -526,79 +508,91 @@ void rb_tree_insert_rebalance(NodePtr x, NodePtr& root) noexcept
       }
     }
   }
-  rb_tree_set_black(root);  // 根节点永远为黑
+  rb_tree_set_black(root);  // 根节点永远为黑，若为红则强行覆盖
 }
 
-// 删除节点后使 rb tree 重新平衡，参数一为要删除的节点，参数二为根节点，参数三为最小节点，参数四为最大节点
-// 
+// 删除节点后使 rb tree 重新平衡，参数 z 为要删除的节点，参数 root 为根节点，参数 leftmost 为最小节点，参数 rightmost 为最大节点
+// 返回删除的节点指针
 // 参考博客: http://blog.csdn.net/v_JULY_v/article/details/6105630
 //          http://blog.csdn.net/v_JULY_v/article/details/6109153
 template <class NodePtr>
-NodePtr rb_tree_erase_rebalance(NodePtr z, NodePtr& root, NodePtr& leftmost, NodePtr& rightmost)
-{
+NodePtr rb_tree_erase_rebalance(NodePtr z, NodePtr& root, NodePtr& leftmost, NodePtr& rightmost) {
   // y 是可能的替换节点，指向最终要删除的节点
-  auto y = (z->left == nullptr || z->right == nullptr) ? z : rb_tree_next(z);
-  // x 是 y 的一个独子节点或 NIL 节点
+  auto y = (z->left == nullptr || z->right == nullptr) ? z : rb_tree_next(z); // 如果z是叶子或者只有一个子节点就选z，否则选择z后继节点
+  // x 是 y 的一个独子节点或 NIL 节点，用于在 y 节点被删除后替代 y 的位置
   auto x = y->left != nullptr ? y->left : y->right;
   // xp 为 x 的父节点
   NodePtr xp = nullptr;
 
   // y != z 说明 z 有两个非空子节点，此时 y 指向 z 右子树的最左节点，x 指向 y 的右子节点。
-  // 用 y 顶替 z 的位置，用 x 顶替 y 的位置，最后用 y 指向 z
-  if (y != z)
-  {
+  /*-----------*\
+  |     p       |
+  |    / \      |
+  |   c   z     |
+  |      / \    |
+  |     a   b   |
+  |        /    |
+  |       y     |
+  |        \    |
+  |         x   |
+  \*-----------*/
+  if (y != z) { // 用 y 顶替 z 的位置，用 x 顶替 y 的位置，最后用 y 指向 z
     z->left->parent = y;
     y->left = z->left;
-
     // 如果 y 不是 z 的右子节点，那么 z 的右子节点一定有左孩子
-    if (y != z->right)
-    { // x 替换 y 的位置
+    if (y != z->right) { // x 替换 y 的位置
       xp = y->parent;
-      if (x != nullptr)
+      if (x != nullptr) {
         x->parent = y->parent;
-
+      }
       y->parent->left = x;
-      y->right = z->right;
+      y->right = z->right; // y 替换 z 位置操作
       z->right->parent = y;
-    }
-    else
-    {
+    } else { // y 是 z 的右子节点
       xp = y;
     }
-
     // 连接 y 与 z 的父节点 
-    if (root == z)
-      root = y;
-    else if (rb_tree_is_lchild(z))
+    if (root == z) { // 特殊情况 z 本身就是根节点
+      root = y; 
+    } else if (rb_tree_is_lchild(z)) { // z 是左节点
       z->parent->left = y;
-    else
+    } else { // z 是右节点
       z->parent->right = y;
-    y->parent = z->parent;
-    yastl::swap(y->color, z->color);
-    y = z;
-  }
-  // y == z 说明 z 至多只有一个孩子
-  else
-  { 
+    }
+    y->parent = z->parent; // 到此为止，y 所处的位置和 z 的位置一模一样
+    yastl::swap(y->color, z->color); // 交换彼此颜色，y 拥有了和 z 一样的颜色
+    y = z; // y 指向准备删除节点 z
+  } else { // y == z 说明 z 至多只有一个孩子
+    /*-----------*\
+    |     p       |
+    |    / \      |
+    |   c   z (y) |
+    |      /      |
+    |     a (x)   |
+    \*-----------*/
     xp = y->parent;
-    if (x)  
+    if (x) {
       x->parent = y->parent;
+    }
 
     // 连接 x 与 z 的父节点
-    if (root == z)
+    if (root == z) {
       root = x;
-    else if (rb_tree_is_lchild(z))
+    } else if (rb_tree_is_lchild(z)) {
       z->parent->left = x;
-    else
+    } else {
       z->parent->right = x;
+    }
 
     // 此时 z 有可能是最左节点或最右节点，更新数据
-    if (leftmost == z)
+    if (leftmost == z) {
       leftmost = x == nullptr ? xp : rb_tree_min(x);
-    if (rightmost == z)
+    }
+    if (rightmost == z) {
       rightmost = x == nullptr ? xp : rb_tree_max(x);
+    }
   }
-
+  // rb tree delete fix up 代码部分
   // 此时，y 指向要删除的节点，x 为替代节点，从 x 节点开始调整。
   // 如果删除的节点为红色，树的性质没有被破坏，否则按照以下情况调整（x 为左子节点为例）：
   // case 1: 兄弟节点为红色，令父节点为红，兄弟节点为黑，进行左（右）旋，继续处理
@@ -607,15 +601,11 @@ NodePtr rb_tree_erase_rebalance(NodePtr z, NodePtr& root, NodePtr& leftmost, Nod
   //         令兄弟节点为红，兄弟节点的左子节点为黑，以兄弟节点为支点右（左）旋，继续处理
   // case 4: 兄弟节点为黑色，右子节点为红色，令兄弟节点为父节点的颜色，父节点为黑色，兄弟节点的右子节点
   //         为黑色，以父节点为支点左（右）旋，树的性质调整完成，算法结束
-  if (!rb_tree_is_red(y))
-  { // x 为黑色时，调整，否则直接将 x 变为黑色即可
-    while (x != root && (x == nullptr || !rb_tree_is_red(x)))
-    {
-      if (x == xp->left)
-      { // 如果 x 为左子节点
+  if (!rb_tree_is_red(y)) { // 红色无需调整，黑色进入循环
+    while (x != root && (x == nullptr || !rb_tree_is_red(x))) { // x 为黑色时，调整，否则直接将 x 变为黑色即可
+      if (x == xp->left) { // 如果 x 为左子节点
         auto brother = xp->right;
-        if (rb_tree_is_red(brother))
-        { // case 1
+        if (rb_tree_is_red(brother)) { // case 1  兄红
           rb_tree_set_black(brother);
           rb_tree_set_red(xp);
           rb_tree_rotate_left(xp, root);
@@ -623,54 +613,46 @@ NodePtr rb_tree_erase_rebalance(NodePtr z, NodePtr& root, NodePtr& leftmost, Nod
         }
         // case 1 转为为了 case 2、3、4 中的一种
         if ((brother->left == nullptr || !rb_tree_is_red(brother->left)) &&
-            (brother->right == nullptr || !rb_tree_is_red(brother->right)))
-        { // case 2
+            (brother->right == nullptr || !rb_tree_is_red(brother->right))) { // case 2 兄黑双黑侄
           rb_tree_set_red(brother);
           x = xp;
           xp = xp->parent;
-        }
-        else
-        { 
-          if (brother->right == nullptr || !rb_tree_is_red(brother->right))
-          { // case 3
-            if (brother->left != nullptr)
+        } else { 
+          if (brother->right == nullptr || !rb_tree_is_red(brother->right)) { // case 3 兄黑右黑侄
+            if (brother->left != nullptr) {
               rb_tree_set_black(brother->left);
+            }
             rb_tree_set_red(brother);
             rb_tree_rotate_right(brother, root);
             brother = xp->right;
           }
-          // 转为 case 4
+          // 转为 case 4 兄黑右红侄
           brother->color = xp->color;
           rb_tree_set_black(xp);
-          if (brother->right != nullptr)  
+          if (brother->right != nullptr) {
             rb_tree_set_black(brother->right);
+          }
           rb_tree_rotate_left(xp, root);
           break;
         }
-      }
-      else  // x 为右子节点，对称处理
-      { 
+      } else { // x 为右子节点，对称处理
         auto brother = xp->left;
-        if (rb_tree_is_red(brother))
-        { // case 1
+        if (rb_tree_is_red(brother)) { // case 1
           rb_tree_set_black(brother);
           rb_tree_set_red(xp);
           rb_tree_rotate_right(xp, root);
           brother = xp->left;
         }
         if ((brother->left == nullptr || !rb_tree_is_red(brother->left)) &&
-            (brother->right == nullptr || !rb_tree_is_red(brother->right)))
-        { // case 2
+            (brother->right == nullptr || !rb_tree_is_red(brother->right))) { // case 2
           rb_tree_set_red(brother);
           x = xp;
           xp = xp->parent;
-        }
-        else
-        {
-          if (brother->left == nullptr || !rb_tree_is_red(brother->left))
-          { // case 3
-            if (brother->right != nullptr)
+        } else {
+          if (brother->left == nullptr || !rb_tree_is_red(brother->left)) { // case 3
+            if (brother->right != nullptr) {
               rb_tree_set_black(brother->right);
+            }
             rb_tree_set_red(brother);
             rb_tree_rotate_left(brother, root);
             brother = xp->left;
@@ -678,15 +660,17 @@ NodePtr rb_tree_erase_rebalance(NodePtr z, NodePtr& root, NodePtr& leftmost, Nod
           // 转为 case 4
           brother->color = xp->color;
           rb_tree_set_black(xp);
-          if (brother->left != nullptr)  
+          if (brother->left != nullptr) {
             rb_tree_set_black(brother->left);
+          }
           rb_tree_rotate_right(xp, root);
           break;
         }
       }
     }
-    if (x != nullptr)
+    if (x != nullptr) {
       rb_tree_set_black(x);
+    }
   }
   return y;
 }
