@@ -284,8 +284,7 @@ void swap(pair<Ty1, Ty2>& lhs, pair<Ty1, Ty2>& rhs)
 
 // 全局函数，让两个数据成为一个 pair
 template <class Ty1, class Ty2>
-pair<Ty1, Ty2> make_pair(Ty1&& first, Ty2&& second)
-{
+pair<Ty1, Ty2> make_pair(Ty1&& first, Ty2&& second) {
   return pair<Ty1, Ty2>(yastl::forward<Ty1>(first), yastl::forward<Ty2>(second));
 }
 

@@ -512,7 +512,7 @@ void rb_tree_insert_rebalance(NodePtr x, NodePtr& root) noexcept {
 }
 
 // 删除节点后使 rb tree 重新平衡，参数 z 为要删除的节点，参数 root 为根节点，参数 leftmost 为最小节点，参数 rightmost 为最大节点
-// 返回删除的节点指针
+// 返回删除的节点指针, 这个节点会从红黑树的结构中移出去，遍历不到
 // 参考博客: http://blog.csdn.net/v_JULY_v/article/details/6105630
 //          http://blog.csdn.net/v_JULY_v/article/details/6109153
 template <class NodePtr>
@@ -526,15 +526,15 @@ NodePtr rb_tree_erase_rebalance(NodePtr z, NodePtr& root, NodePtr& leftmost, Nod
 
   // y != z 说明 z 有两个非空子节点，此时 y 指向 z 右子树的最左节点，x 指向 y 的右子节点。
   /*-----------*\
-  |     p       |
-  |    / \      |
-  |   c   z     |
-  |      / \    |
-  |     a   b   |
-  |        /    |
-  |       y     |
+  |     p       |        p
+  |    / \      |      /   \
+  |   c   d (z) |     c     e         d(z)(y)
+  |      / \    |          / \
+  |     a   b   | =>      a   b(xp)
+  |        /    |             /
+  |       e (y) |            f (x)
   |        \    |
-  |         x   |
+  |        f (x)|
   \*-----------*/
   if (y != z) { // 用 y 顶替 z 的位置，用 x 顶替 y 的位置，最后用 y 指向 z
     z->left->parent = y;
@@ -563,13 +563,13 @@ NodePtr rb_tree_erase_rebalance(NodePtr z, NodePtr& root, NodePtr& leftmost, Nod
     yastl::swap(y->color, z->color); // 交换彼此颜色，y 拥有了和 z 一样的颜色
     y = z; // y 指向准备删除节点 z
   } else { // y == z 说明 z 至多只有一个孩子
-    /*-----------*\
-    |     p       |
-    |    / \      |
-    |   c   z (y) |
-    |      /      |
-    |     a (x)   |
-    \*-----------*/
+    /*-------------*\
+    |     p         |       p(xp)
+    |    / \        |      /  \
+    |   c   b(z)(y) | =>  c    a(x)       b(z)(y)
+    |      /        |
+    |     a (x)     |
+    \*-------------*/
     xp = y->parent;
     if (x) {
       x->parent = y->parent;
@@ -626,7 +626,7 @@ NodePtr rb_tree_erase_rebalance(NodePtr z, NodePtr& root, NodePtr& leftmost, Nod
             rb_tree_rotate_right(brother, root);
             brother = xp->right;
           }
-          // 转为 case 4 兄黑右红侄
+          // 转为 case 4 兄黑右红侄（左旋父，祖染父色，父叔黑）
           brother->color = xp->color;
           rb_tree_set_black(xp);
           if (brother->right != nullptr) {
@@ -678,58 +678,63 @@ NodePtr rb_tree_erase_rebalance(NodePtr z, NodePtr& root, NodePtr& leftmost, Nod
 // 模板类 rb_tree
 // 参数一代表数据类型，参数二代表键值比较类型
 template <class T, class Compare>
-class rb_tree
-{
+class rb_tree {
 public:
   // rb_tree 的嵌套型别定义 
   
-  typedef rb_tree_traits<T>                        tree_traits;
-  typedef rb_tree_value_traits<T>                  value_traits;
+  typedef rb_tree_traits<T> tree_traits;
+  typedef rb_tree_value_traits<T> value_traits;
 
-  typedef typename tree_traits::base_type          base_type;
-  typedef typename tree_traits::base_ptr           base_ptr;
-  typedef typename tree_traits::node_type          node_type;
-  typedef typename tree_traits::node_ptr           node_ptr;
-  typedef typename tree_traits::key_type           key_type;
-  typedef typename tree_traits::mapped_type        mapped_type;
-  typedef typename tree_traits::value_type         value_type;
-  typedef Compare                                  key_compare;
+  typedef typename tree_traits::base_type base_type;
+  typedef typename tree_traits::base_ptr base_ptr;
+  typedef typename tree_traits::node_type node_type;
+  typedef typename tree_traits::node_ptr node_ptr;
+  typedef typename tree_traits::key_type key_type;
+  typedef typename tree_traits::mapped_type mapped_type;
+  typedef typename tree_traits::value_type value_type;
+  typedef Compare key_compare; // 比较方式
 
-  typedef yastl::allocator<T>                      allocator_type;
-  typedef yastl::allocator<T>                      data_allocator;
-  typedef yastl::allocator<base_type>              base_allocator;
-  typedef yastl::allocator<node_type>              node_allocator;
+  typedef yastl::allocator<T> allocator_type;
+  typedef yastl::allocator<T> data_allocator;
+  typedef yastl::allocator<base_type> base_allocator;
+  typedef yastl::allocator<node_type> node_allocator;
 
-  typedef typename allocator_type::pointer         pointer;
-  typedef typename allocator_type::const_pointer   const_pointer;
-  typedef typename allocator_type::reference       reference;
+  typedef typename allocator_type::pointer pointer;
+  typedef typename allocator_type::const_pointer const_pointer;
+  typedef typename allocator_type::reference reference;
   typedef typename allocator_type::const_reference const_reference;
-  typedef typename allocator_type::size_type       size_type;
+  typedef typename allocator_type::size_type size_type;
   typedef typename allocator_type::difference_type difference_type;
 
-  typedef rb_tree_iterator<T>                      iterator;
-  typedef rb_tree_const_iterator<T>                const_iterator;
-  typedef yastl::reverse_iterator<iterator>        reverse_iterator;
-  typedef yastl::reverse_iterator<const_iterator>  const_reverse_iterator;
+  typedef rb_tree_iterator<T> iterator;
+  typedef rb_tree_const_iterator<T> const_iterator;
+  typedef yastl::reverse_iterator<iterator> reverse_iterator;
+  typedef yastl::reverse_iterator<const_iterator> const_reverse_iterator;
 
-  allocator_type get_allocator() const { return node_allocator(); }
-  key_compare    key_comp()      const { return key_comp_; }
+  allocator_type get_allocator() const {
+    return node_allocator();
+  }
+  key_compare key_comp() const {
+    return key_comp_;
+  }
 
 private:
   // 用以下三个数据表现 rb tree
-  base_ptr    header_;      // 特殊节点，与根节点互为对方的父节点
-  size_type   node_count_;  // 节点数
+  base_ptr header_;      // 特殊节点，与根节点互为对方的父节点
+  size_type node_count_;  // 节点数
   key_compare key_comp_;    // 节点键值比较的准则
 
 private:
   // 以下三个函数用于取得根节点，最小节点和最大节点
-  base_ptr& root()      const { return header_->parent; }
-  base_ptr& leftmost()  const { return header_->left; }
+  base_ptr& root() const { return header_->parent; }
+  base_ptr& leftmost() const { return header_->left; }
   base_ptr& rightmost() const { return header_->right; }
 
 public:
   // 构造、复制、析构函数
-  rb_tree() { rb_tree_init(); }
+  rb_tree() {
+    rb_tree_init();
+  }
 
   rb_tree(const rb_tree& rhs);
   rb_tree(rb_tree&& rhs) noexcept;
@@ -737,108 +742,124 @@ public:
   rb_tree& operator=(const rb_tree& rhs);
   rb_tree& operator=(rb_tree&& rhs);
 
-  ~rb_tree() { clear(); }
+  ~rb_tree() {
+    clear();
+  }
 
 public:
   // 迭代器相关操作
 
-  iterator               begin()         noexcept 
-  { return leftmost(); }
-  const_iterator         begin()   const noexcept
-  { return leftmost(); }
-  iterator               end()           noexcept
-  { return header_; }
-  const_iterator         end()     const noexcept
-  { return header_; }
+  // 返回leftmost
+  iterator begin() noexcept {
+    return leftmost();
+  }
+  const_iterator begin() const noexcept {
+    return leftmost();
+  }
+  iterator end() noexcept { // 插入都从end()开始插入
+    return header_;
+  }
+  const_iterator end() const noexcept {
+    return header_;
+  }
 
-  reverse_iterator       rbegin()        noexcept
-  { return reverse_iterator(end()); }
-  const_reverse_iterator rbegin()  const noexcept
-  { return const_reverse_iterator(end()); }
-  reverse_iterator       rend()          noexcept
-  { return reverse_iterator(begin()); }
-  const_reverse_iterator rend()    const noexcept
-  { return const_reverse_iterator(begin()); }
+  reverse_iterator rbegin() noexcept {
+    return reverse_iterator(end());
+  }
+  const_reverse_iterator rbegin() const noexcept {
+    return const_reverse_iterator(end());
+  }
+  reverse_iterator rend() noexcept {
+    return reverse_iterator(begin());
+  }
+  const_reverse_iterator rend() const noexcept {
+    return const_reverse_iterator(begin());
+  }
 
-  const_iterator         cbegin()  const noexcept
-  { return begin(); }
-  const_iterator         cend()    const noexcept
-  { return end(); }
-  const_reverse_iterator crbegin() const noexcept
-  { return rbegin(); }
-  const_reverse_iterator crend()   const noexcept
-  { return rend(); }
+  const_iterator cbegin() const noexcept {
+    return begin();
+  }
+  const_iterator cend() const noexcept {
+    return end();
+  }
+  const_reverse_iterator crbegin() const noexcept {
+    return rbegin();
+  }
+  const_reverse_iterator crend() const noexcept {
+    return rend();
+  }
 
   // 容量相关操作
 
-  bool      empty()    const noexcept { return node_count_ == 0; }
-  size_type size()     const noexcept { return node_count_; }
-  size_type max_size() const noexcept { return static_cast<size_type>(-1); }
+  bool empty() const noexcept {
+    return node_count_ == 0;
+  }
+  size_type size() const noexcept {
+    return node_count_;
+  }
+  size_type max_size() const noexcept {
+    return static_cast<size_type>(-1);
+  }
 
   // 插入删除相关操作
 
   // emplace
 
   template <class ...Args>
-  iterator  emplace_multi(Args&& ...args);
+  iterator emplace_multi(Args&& ...args);
 
   template <class ...Args>
   yastl::pair<iterator, bool> emplace_unique(Args&& ...args);
 
   template <class ...Args>
-  iterator  emplace_multi_use_hint(iterator hint, Args&& ...args);
+  iterator emplace_multi_use_hint(iterator hint, Args&& ...args);
 
   template <class ...Args>
-  iterator  emplace_unique_use_hint(iterator hint, Args&& ...args);
+  iterator emplace_unique_use_hint(iterator hint, Args&& ...args);
 
   // insert
 
-  iterator  insert_multi(const value_type& value);
-  iterator  insert_multi(value_type&& value)
-  {
+  iterator insert_multi(const value_type& value);
+  iterator insert_multi(value_type&& value) {
     return emplace_multi(yastl::move(value));
   }
 
-  iterator  insert_multi(iterator hint, const value_type& value)
-  {
+  iterator insert_multi(iterator hint, const value_type& value) {
     return emplace_multi_use_hint(hint, value);
   }
-  iterator  insert_multi(iterator hint, value_type&& value)
-  {
+  iterator insert_multi(iterator hint, value_type&& value) {
     return emplace_multi_use_hint(hint, yastl::move(value));
   }
 
+  // 将[first, last)依次插入红黑树中
   template <class InputIterator>
-  void      insert_multi(InputIterator first, InputIterator last)
-  {
+  void insert_multi(InputIterator first, InputIterator last) {
     size_type n = yastl::distance(first, last);
     THROW_LENGTH_ERROR_IF(node_count_ > max_size() - n, "rb_tree<T, Comp>'s size too big");
-    for (; n > 0; --n, ++first)
+    for (; n > 0; --n, ++first) { // 依次插入
       insert_multi(end(), *first);
+    }
   }
 
   yastl::pair<iterator, bool> insert_unique(const value_type& value);
-  yastl::pair<iterator, bool> insert_unique(value_type&& value)
-  {
+  yastl::pair<iterator, bool> insert_unique(value_type&& value) {
     return emplace_unique(yastl::move(value));
   }
 
-  iterator  insert_unique(iterator hint, const value_type& value)
-  {
+  iterator insert_unique(iterator hint, const value_type& value) {
     return emplace_unique_use_hint(hint, value);
   }
-  iterator  insert_unique(iterator hint, value_type&& value)
-  {
+  iterator insert_unique(iterator hint, value_type&& value) {
     return emplace_unique_use_hint(hint, yastl::move(value));
   }
 
   template <class InputIterator>
-  void      insert_unique(InputIterator first, InputIterator last)
-  {
+  void insert_unique(InputIterator first, InputIterator last) {
     size_type n = yastl::distance(first, last);
     THROW_LENGTH_ERROR_IF(node_count_ > max_size() - n, "rb_tree<T, Comp>'s size too big");
-    for (; n > 0; --n, ++first)
+    for (; n > 0; --n, ++first) {
       insert_unique(end(), *first);
+    }
   }
 
   // erase
@@ -914,8 +935,7 @@ private:
   void     reset();
 
   // get insert pos
-  yastl::pair<base_ptr, bool> 
-           get_insert_multi_pos(const key_type& key);
+  yastl::pair<base_ptr, bool> get_insert_multi_pos(const key_type& key);
   yastl::pair<yastl::pair<base_ptr, bool>, bool> 
            get_insert_unique_pos(const key_type& key);
 
@@ -1074,74 +1094,54 @@ emplace_multi_use_hint(iterator hint, Args&& ...args)
 template<class T, class Compare>
 template<class ...Args>
 typename rb_tree<T, Compare>::iterator
-rb_tree<T, Compare>::
-emplace_unique_use_hint(iterator hint, Args&& ...args)
-{
+rb_tree<T, Compare>::emplace_unique_use_hint(iterator hint, Args&& ...args) {
   THROW_LENGTH_ERROR_IF(node_count_ > max_size() - 1, "rb_tree<T, Comp>'s size too big");
   node_ptr np = create_node(yastl::forward<Args>(args)...);
-  if (node_count_ == 0)
-  {
+  if (node_count_ == 0) {
     return insert_node_at(header_, np, true);
   }
   key_type key = value_traits::get_key(np->value);
-  if (hint == begin())
-  { // 位于 begin 处
-    if (key_comp_(key, value_traits::get_key(*hint)))
-    {
+  if (hint == begin()) { // 位于 begin 处插入
+    if (key_comp_(key, value_traits::get_key(*hint))) {
       return insert_node_at(hint.node, np, true);
-    }
-    else
-    {
+    } else {
       auto pos = get_insert_unique_pos(key);
-      if (!pos.second)
-      {
+      if (!pos.second) { // 在pos.first.first插入key失败会，有重复的值
         destroy_node(np);
-        return pos.first.first;
+        return pos.first.first; // 返回插入key失败的父节点
       }
-      return insert_node_at(pos.first.first, np, pos.first.second);
+      return insert_node_at(pos.first.first, np, pos.first.second); // 可以插入
     }
-  }
-  else if (hint == end())
-  { // 位于 end 处
-    if (key_comp_(value_traits::get_key(rightmost()->get_node_ptr()->value), key))
-    {
+  } else if (hint == end()) { // 位于 end 处插入
+    if (key_comp_(value_traits::get_key(rightmost()->get_node_ptr()->value), key)) {
       return insert_node_at(rightmost(), np, false);
-    }
-    else
-    {
+    } else {
       auto pos = get_insert_unique_pos(key);
-      if (!pos.second)
-      {
+      if (!pos.second) {
         destroy_node(np);
         return pos.first.first;
       }
       return insert_node_at(pos.first.first, np, pos.first.second);
     }
   }
-  return insert_unique_use_hint(hint, key, np);
+  return insert_unique_use_hint(hint, key, np); // 位于 hint 处插入
 }
 
 // 插入元素，节点键值允许重复
 template <class T, class Compare>
-typename rb_tree<T, Compare>::iterator
-rb_tree<T, Compare>::
-insert_multi(const value_type& value)
-{
+typename rb_tree<T, Compare>::iterator rb_tree<T, Compare>::insert_multi(const value_type& value) {
   THROW_LENGTH_ERROR_IF(node_count_ > max_size() - 1, "rb_tree<T, Comp>'s size too big");
-  auto res = get_insert_multi_pos(value_traits::get_key(value));
-  return insert_value_at(res.first, value, res.second);
+  auto res = get_insert_multi_pos(value_traits::get_key(value)); // 找到插入位置
+  return insert_value_at(res.first, value, res.second); // 在res.first位置插入value，res.second决定是否是左节点
 }
 
 // 插入新值，节点键值不允许重复，返回一个 pair，若插入成功，pair 的第二参数为 true，否则为 false
 template <class T, class Compare>
 yastl::pair<typename rb_tree<T, Compare>::iterator, bool>
-rb_tree<T, Compare>::
-insert_unique(const value_type& value)
-{
+rb_tree<T, Compare>::insert_unique(const value_type& value) {
   THROW_LENGTH_ERROR_IF(node_count_ > max_size() - 1, "rb_tree<T, Comp>'s size too big");
   auto res = get_insert_unique_pos(value_traits::get_key(value));
-  if (res.second)
-  { // 插入成功
+  if (res.second) { // 插入成功
     return yastl::make_pair(insert_value_at(res.first.first, value, res.first.second), true);
   }
   return yastl::make_pair(res.first.first, false);
@@ -1372,19 +1372,14 @@ swap(rb_tree& rhs) noexcept
 template <class T, class Compare>
 template <class ...Args>
 typename rb_tree<T, Compare>::node_ptr
-rb_tree<T, Compare>::
-create_node(Args&&... args)
-{
+rb_tree<T, Compare>::create_node(Args&&... args) {
   auto tmp = node_allocator::allocate(1);
-  try
-  {
+  try {
     data_allocator::construct(yastl::address_of(tmp->value), yastl::forward<Args>(args)...);
     tmp->left = nullptr;
     tmp->right = nullptr;
     tmp->parent = nullptr;
-  }
-  catch (...)
-  {
+  } catch (...) {
     node_allocator::deallocate(tmp);
     throw;
   }
@@ -1434,52 +1429,44 @@ void rb_tree<T, Compare>::reset()
   node_count_ = 0;
 }
 
-// get_insert_multi_pos 函数
+// get_insert_multi_pos 函数, 找到插入的位置返回值 <位置，是否插在左边>
 template <class T, class Compare>
 yastl::pair<typename rb_tree<T, Compare>::base_ptr, bool>
-rb_tree<T, Compare>::get_insert_multi_pos(const key_type& key)
-{
+rb_tree<T, Compare>::get_insert_multi_pos(const key_type& key) {
   auto x = root();
   auto y = header_;
   bool add_to_left = true;
-  while (x != nullptr)
-  {
+  while (x != nullptr) { // 从根节点开始寻找
     y = x;
-    add_to_left = key_comp_(key, value_traits::get_key(x->get_node_ptr()->value));
+    add_to_left = key_comp_(key, value_traits::get_key(x->get_node_ptr()->value)); // 依次与当前节点比较
     x = add_to_left ? x->left : x->right;
   }
   return yastl::make_pair(y, add_to_left);
 }
 
-// get_insert_unique_pos 函数
+// get_insert_unique_pos 函数, 如果key有重复就会不允许插入
+// 返回一个 pair，第一个值为一个 pair，包含插入点的父节点和一个 bool 表示是否在左边插入，
+// 第二个值为一个 bool，表示是否插入成功
 template <class T, class Compare>
 yastl::pair<yastl::pair<typename rb_tree<T, Compare>::base_ptr, bool>, bool>
-rb_tree<T, Compare>::get_insert_unique_pos(const key_type& key)
-{ // 返回一个 pair，第一个值为一个 pair，包含插入点的父节点和一个 bool 表示是否在左边插入，
-  // 第二个值为一个 bool，表示是否插入成功
+rb_tree<T, Compare>::get_insert_unique_pos(const key_type& key) { 
   auto x = root();
   auto y = header_;
   bool add_to_left = true;  // 树为空时也在 header_ 左边插入
-  while (x != nullptr)
-  {
+  while (x != nullptr) {
     y = x;
     add_to_left = key_comp_(key, value_traits::get_key(x->get_node_ptr()->value));
     x = add_to_left ? x->left : x->right;
   }
   iterator j = iterator(y);  // 此时 y 为插入点的父节点
-  if (add_to_left)
-  {
-    if (y == header_ || j == begin())
-    { // 如果树为空树或插入点在最左节点处，肯定可以插入新的节点
+  if (add_to_left) {
+    if (y == header_ || j == begin()) { // 如果树为空树或插入点在最左节点处，肯定可以插入新的节点
       return yastl::make_pair(yastl::make_pair(y, true), true);
-    }
-    else
-    { // 否则，如果存在重复节点，那么 --j 就是重复的值
+    } else { // 否则，如果存在重复节点，那么 --j 就是重复的值
       --j;
     }
   }
-  if (key_comp_(value_traits::get_key(*j), key))  
-  { // 表明新节点没有重复
+  if (key_comp_(value_traits::get_key(*j), key)) { // 表明新节点没有重复
     return yastl::make_pair(yastl::make_pair(y, add_to_left), true);
   }
   // 进行至此，表示新节点与现有节点键值重复
@@ -1490,31 +1477,26 @@ rb_tree<T, Compare>::get_insert_unique_pos(const key_type& key)
 // x 为插入点的父节点， value 为要插入的值，add_to_left 表示是否在左边插入
 template <class T, class Compare>
 typename rb_tree<T, Compare>::iterator
-rb_tree<T, Compare>::
-insert_value_at(base_ptr x, const value_type& value, bool add_to_left)
-{
+rb_tree<T, Compare>::insert_value_at(base_ptr x, const value_type& value, bool add_to_left) {
   node_ptr node = create_node(value);
   node->parent = x;
   auto base_node = node->get_base_ptr();
-  if (x == header_)
-  {
+  if (x == header_) { // 如果一个目前树为空
     root() = base_node;
     leftmost() = base_node;
     rightmost() = base_node;
-  }
-  else if (add_to_left)
-  {
+  } else if (add_to_left) { // 插在x的左边
     x->left = base_node;
-    if (leftmost() == x)
+    if (leftmost() == x) {
       leftmost() = base_node;
-  }
-  else
-  {
+    }
+  } else {
     x->right = base_node;
-    if (rightmost() == x)
+    if (rightmost() == x) {
       rightmost() = base_node;
+    }
   }
-  rb_tree_insert_rebalance(base_node, root());
+  rb_tree_insert_rebalance(base_node, root()); // 进行插入后的平衡操作
   ++node_count_;
   return iterator(node);
 }
@@ -1523,30 +1505,25 @@ insert_value_at(base_ptr x, const value_type& value, bool add_to_left)
 // x 为插入点的父节点， node 为要插入的节点，add_to_left 表示是否在左边插入
 template <class T, class Compare>
 typename rb_tree<T, Compare>::iterator
-rb_tree<T, Compare>::
-insert_node_at(base_ptr x, node_ptr node, bool add_to_left)
-{
+rb_tree<T, Compare>::insert_node_at(base_ptr x, node_ptr node, bool add_to_left) {
   node->parent = x;
   auto base_node = node->get_base_ptr();
-  if (x == header_)
-  {
+  if (x == header_) { // 空树，插入根节点
     root() = base_node;
     leftmost() = base_node;
     rightmost() = base_node;
-  }
-  else if (add_to_left)
-  {
+  } else if (add_to_left) { // 插在x左边
     x->left = base_node;
-    if (leftmost() == x)
+    if (leftmost() == x) {
       leftmost() = base_node;
-  }
-  else
-  {
+    }
+  } else { // 插在x的右边
     x->right = base_node;
-    if (rightmost() == x)
+    if (rightmost() == x) {
       rightmost() = base_node;
+    }
   }
-  rb_tree_insert_rebalance(base_node, root());
+  rb_tree_insert_rebalance(base_node, root()); // 插入后的调整操作
   ++node_count_;
   return iterator(node);
 }
