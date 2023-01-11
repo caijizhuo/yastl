@@ -339,7 +339,7 @@ struct rb_tree_const_iterator : public rb_tree_iterator_base<T> {
 };
 
 // tree algorithm
-// 取x为根节点的二叉搜索树的最小值的指针
+// 取 x 为根节点的二叉搜索树的最小值的指针
 template <class NodePtr>
 NodePtr rb_tree_min(NodePtr x) noexcept {
   while (x->left != nullptr) { // 一路向左
@@ -348,7 +348,7 @@ NodePtr rb_tree_min(NodePtr x) noexcept {
   return x;
 }
 
-// 取x为根节点的二叉搜索树的最大值的指针
+// 取 x 为根节点的二叉搜索树的最大值的指针
 template <class NodePtr>
 NodePtr rb_tree_max(NodePtr x) noexcept {
   while (x->right != nullptr) {
@@ -756,6 +756,7 @@ public:
   const_iterator begin() const noexcept {
     return leftmost();
   }
+  // 返回header
   iterator end() noexcept { // 插入都从end()开始插入
     return header_;
   }
@@ -864,57 +865,47 @@ public:
 
   // erase
 
-  iterator  erase(iterator hint);
-
+  iterator erase(iterator hint);
   size_type erase_multi(const key_type& key);
   size_type erase_unique(const key_type& key);
-
-  void      erase(iterator first, iterator last);
-
-  void      clear();
+  void erase(iterator first, iterator last);
+  void clear();
 
   // rb_tree 相关操作
 
-  iterator       find(const key_type& key);
+  iterator find(const key_type& key);
   const_iterator find(const key_type& key) const;
 
-  size_type      count_multi(const key_type& key) const
-  {
+  size_type count_multi(const key_type& key) const {
     auto p = equal_range_multi(key);
     return static_cast<size_type>(yastl::distance(p.first, p.second));
   }
-  size_type      count_unique(const key_type& key) const
-  {
+  // 找到返回1，没找到返回0
+  size_type count_unique(const key_type& key) const {
     return find(key) != end() ? 1 : 0;
   }
 
-  iterator       lower_bound(const key_type& key);
+  iterator lower_bound(const key_type& key);
   const_iterator lower_bound(const key_type& key) const;
 
-  iterator       upper_bound(const key_type& key);
+  iterator upper_bound(const key_type& key);
   const_iterator upper_bound(const key_type& key) const;
 
-  yastl::pair<iterator, iterator>             
-  equal_range_multi(const key_type& key)
-  {
+  // 删除 key 的所有节点，返回等于 key 的迭代器左区间和右区间
+  yastl::pair<iterator, iterator> equal_range_multi(const key_type& key) {
     return yastl::pair<iterator, iterator>(lower_bound(key), upper_bound(key));
   }
-  yastl::pair<const_iterator, const_iterator>
-  equal_range_multi(const key_type& key) const
-  {
+  yastl::pair<const_iterator, const_iterator> equal_range_multi(const key_type& key) const {
     return yastl::pair<const_iterator, const_iterator>(lower_bound(key), upper_bound(key));
   }
-
-  yastl::pair<iterator, iterator>             
-  equal_range_unique(const key_type& key)
-  {
+  // 返回找到key的迭代器区间 pair
+  yastl::pair<iterator, iterator> equal_range_unique(const key_type& key) {
     iterator it = find(key);
     auto next = it;
     return it == end() ? yastl::make_pair(it, it) : yastl::make_pair(it, ++next);
   }
-  yastl::pair<const_iterator, const_iterator> 
-  equal_range_unique(const key_type& key) const
-  {
+  // const 版本
+  yastl::pair<const_iterator, const_iterator> equal_range_unique(const key_type& key) const {
     const_iterator it = find(key);
     auto next = it;
     return it == end() ? yastl::make_pair(it, it) : yastl::make_pair(it, ++next);
@@ -928,11 +919,11 @@ private:
   template <class ...Args>
   node_ptr create_node(Args&&... args);
   node_ptr clone_node(base_ptr x);
-  void     destroy_node(node_ptr p);
+  void destroy_node(node_ptr p);
 
   // init / reset
-  void     rb_tree_init();
-  void     reset();
+  void rb_tree_init();
+  void reset();
 
   // get insert pos
   yastl::pair<base_ptr, bool> get_insert_multi_pos(const key_type& key);
@@ -949,19 +940,16 @@ private:
 
   // copy tree / erase tree
   base_ptr copy_from(base_ptr x, base_ptr p);
-  void     erase_since(base_ptr x);
+  void erase_since(base_ptr x);
 };
 
 /*****************************************************************************************/
 
 // 复制构造函数
 template <class T, class Compare>
-rb_tree<T, Compare>::
-rb_tree(const rb_tree& rhs)
-{
+rb_tree<T, Compare>::rb_tree(const rb_tree& rhs) {
   rb_tree_init();
-  if (rhs.node_count_ != 0)
-  {
+  if (rhs.node_count_ != 0) {
     root() = copy_from(rhs.root(), header_);
     leftmost() = rb_tree_min(root());
     rightmost() = rb_tree_max(root());
@@ -972,32 +960,21 @@ rb_tree(const rb_tree& rhs)
 
 // 移动构造函数
 template <class T, class Compare>
-rb_tree<T, Compare>::
-rb_tree(rb_tree&& rhs) noexcept
-  :header_(yastl::move(rhs.header_)),
-  node_count_(rhs.node_count_),
-  key_comp_(rhs.key_comp_)
-{
-  rhs.reset();
+rb_tree<T, Compare>::rb_tree(rb_tree&& rhs) noexcept
+  : header_(yastl::move(rhs.header_)), node_count_(rhs.node_count_), key_comp_(rhs.key_comp_) {
+  rhs.reset(); // 移动构造给成员置空，防止double free
 }
 
 // 复制赋值操作符
 template <class T, class Compare>
-rb_tree<T, Compare>& 
-rb_tree<T, Compare>::
-operator=(const rb_tree& rhs)
-{
-  if (this != &rhs)
-  {
-    clear();
-
-    if (rhs.node_count_ != 0)
-    {
+rb_tree<T, Compare>& rb_tree<T, Compare>::operator=(const rb_tree& rhs) {
+  if (this != &rhs) {
+    clear(); // 释放当前的内存
+    if (rhs.node_count_ != 0) { // 复制 rhs 的内容
       root() = copy_from(rhs.root(), header_);
       leftmost() = rb_tree_min(root());
       rightmost() = rb_tree_max(root());
     }
-
     node_count_ = rhs.node_count_;
     key_comp_ = rhs.key_comp_;
   }
@@ -1006,46 +983,37 @@ operator=(const rb_tree& rhs)
 
 // 移动赋值操作符
 template <class T, class Compare>
-rb_tree<T, Compare>&
-rb_tree<T, Compare>::
-operator=(rb_tree&& rhs)
-{
+rb_tree<T, Compare>& rb_tree<T, Compare>::operator=(rb_tree&& rhs) {
   clear();
   header_ = yastl::move(rhs.header_);
   node_count_ = rhs.node_count_;
   key_comp_ = rhs.key_comp_;
-  rhs.reset();
+  rhs.reset(); // 置空 rhs 的成员，防止double free
   return *this;
 }
 
 // 就地插入元素，键值允许重复
 template <class T, class Compare>
 template <class ...Args>
-typename rb_tree<T, Compare>::iterator 
-rb_tree<T, Compare>::
-emplace_multi(Args&& ...args)
-{
+typename rb_tree<T, Compare>::iterator rb_tree<T, Compare>::emplace_multi(Args&& ...args) {
   THROW_LENGTH_ERROR_IF(node_count_ > max_size() - 1, "rb_tree<T, Comp>'s size too big");
   node_ptr np = create_node(yastl::forward<Args>(args)...);
   auto res = get_insert_multi_pos(value_traits::get_key(np->value));
   return insert_node_at(res.first, np, res.second);
 }
 
-// 就地插入元素，键值不允许重复
+// 就地插入元素，键值不允许重复 返回值<父节点，是否插入成功>
 template <class T, class Compare>
 template <class ...Args>
 yastl::pair<typename rb_tree<T, Compare>::iterator, bool> 
-rb_tree<T, Compare>::
-emplace_unique(Args&& ...args)
-{
+rb_tree<T, Compare>::emplace_unique(Args&& ...args) {
   THROW_LENGTH_ERROR_IF(node_count_ > max_size() - 1, "rb_tree<T, Comp>'s size too big");
   node_ptr np = create_node(yastl::forward<Args>(args)...);
   auto res = get_insert_unique_pos(value_traits::get_key(np->value));
-  if (res.second)
-  { // 插入成功
+  if (res.second) { // 插入成功
     return yastl::make_pair(insert_node_at(res.first.first, np, res.first.second), true);
   }
-  destroy_node(np);
+  destroy_node(np); // 插入失败
   return yastl::make_pair(iterator(res.first.first), false);
 }
 
@@ -1053,36 +1021,24 @@ emplace_unique(Args&& ...args)
 template <class T, class Compare>
 template <class ...Args>
 typename rb_tree<T, Compare>::iterator
-rb_tree<T, Compare>::
-emplace_multi_use_hint(iterator hint, Args&& ...args)
-{
+rb_tree<T, Compare>::emplace_multi_use_hint(iterator hint, Args&& ...args) {
   THROW_LENGTH_ERROR_IF(node_count_ > max_size() - 1, "rb_tree<T, Comp>'s size too big");
   node_ptr np = create_node(yastl::forward<Args>(args)...);
-  if (node_count_ == 0)
-  {
+  if (node_count_ == 0) { // 空树，直接插入作为根节点
     return insert_node_at(header_, np, true);
   }
   key_type key = value_traits::get_key(np->value);
-  if (hint == begin())
-  { // 位于 begin 处
-    if (key_comp_(key, value_traits::get_key(*hint)))
-    {
+  if (hint == begin()) { // 位于 begin 处
+    if (key_comp_(key, value_traits::get_key(*hint))) {  // key < *hint
       return insert_node_at(hint.node, np, true);
-    }
-    else
-    {
+    } else { // key >= *hint  hint不生效
       auto pos = get_insert_multi_pos(key);
       return insert_node_at(pos.first, np, pos.second);
     }
-  }
-  else if (hint == end())
-  { // 位于 end 处
-    if (!key_comp_(key, value_traits::get_key(rightmost()->get_node_ptr()->value)))
-    {
+  } else if (hint == end()) { // 位于 end 处  hint提示生效
+    if (!key_comp_(key, value_traits::get_key(rightmost()->get_node_ptr()->value))) { // key >= rightmost
       return insert_node_at(rightmost(), np, false);
-    }
-    else
-    {
+    } else { // hint不生效
       auto pos = get_insert_multi_pos(key);
       return insert_node_at(pos.first, np, pos.second);
     }
@@ -1150,40 +1106,33 @@ rb_tree<T, Compare>::insert_unique(const value_type& value) {
 // 删除 hint 位置的节点
 template <class T, class Compare>
 typename rb_tree<T, Compare>::iterator
-rb_tree<T, Compare>::
-erase(iterator hint)
-{
+rb_tree<T, Compare>::erase(iterator hint) {
   auto node = hint.node->get_node_ptr();
   iterator next(node);
   ++next;
   
-  rb_tree_erase_rebalance(hint.node, root(), leftmost(), rightmost());
-  destroy_node(node);
+  rb_tree_erase_rebalance(node, root(), leftmost(), rightmost()); // 让 node 移除树连接关系并且调整红黑树
+  destroy_node(node); // 销毁 node
   --node_count_;
-  return next;
+  return next; // 返回node的后继节点
 }
 
 // 删除键值等于 key 的元素，返回删除的个数
 template <class T, class Compare>
 typename rb_tree<T, Compare>::size_type
-rb_tree<T, Compare>::
-erase_multi(const key_type& key)
-{
+rb_tree<T, Compare>::erase_multi(const key_type& key) {
   auto p = equal_range_multi(key);
   size_type n = yastl::distance(p.first, p.second);
   erase(p.first, p.second);
   return n;
 }
 
-// 删除键值等于 key 的元素，返回删除的个数
+// 删除键值等于 key 的元素一个，返回删除的个数
 template <class T, class Compare>
 typename rb_tree<T, Compare>::size_type
-rb_tree<T, Compare>::
-erase_unique(const key_type& key)
-{
+rb_tree<T, Compare>::erase_unique(const key_type& key) {
   auto it = find(key);
-  if (it != end())
-  {
+  if (it != end()) {
     erase(it);
     return 1;
   }
@@ -1192,27 +1141,20 @@ erase_unique(const key_type& key)
 
 // 删除[first, last)区间内的元素
 template <class T, class Compare>
-void rb_tree<T, Compare>::
-erase(iterator first, iterator last)
-{
-  if (first == begin() && last == end())
-  {
+void rb_tree<T, Compare>::erase(iterator first, iterator last) {
+  if (first == begin() && last == end()) {
     clear();
-  }
-  else
-  {
-    while (first != last)
+  } else {
+    while (first != last) {
       erase(first++);
+    }
   }
 }
 
 // 清空 rb tree
 template <class T, class Compare>
-void rb_tree<T, Compare>::
-clear()
-{
-  if (node_count_ != 0)
-  {
+void rb_tree<T, Compare>::clear() {
+  if (node_count_ != 0) {
     erase_since(root());
     leftmost() = header_;
     root() = nullptr;
@@ -1223,42 +1165,33 @@ clear()
 
 // 查找键值为 k 的节点，返回指向它的迭代器
 template <class T, class Compare>
-typename rb_tree<T, Compare>::iterator
-rb_tree<T, Compare>::
-find(const key_type& key)
-{
-  auto y = header_;  // 最后一个不小于 key 的节点
+typename rb_tree<T, Compare>::iterator rb_tree<T, Compare>::find(const key_type& key) {
+  auto y = header_;  // 最后一个 >=key 的节点
   auto x = root();
-  while (x != nullptr)
-  {
-    if (!key_comp_(value_traits::get_key(x->get_node_ptr()->value), key))
-    { // key 小于等于 x 键值，向左走
-      y = x, x = x->left;
-    }
-    else
-    { // key 大于 x 键值，向右走
+  while (x != nullptr) { // 向下搜索，若没找到 x 为 nullptr，y 为 end()，若找到 y 为 key 的迭代器
+    if (!key_comp_(value_traits::get_key(x->get_node_ptr()->value), key)) { // key <= x.value 键值，向左走
+      // 值有可能在 x 的子树上，用 y 来标记它
+      y = x;
+      x = x->left;
+    } else { // key > x.value ，向右走
       x = x->right;
     }
   }
   iterator j = iterator(y);
+  //    没找到或者空树 || key < *y 说明 y 的位置不是 key，也是没找到
   return (j == end() || key_comp_(key, value_traits::get_key(*j))) ? end() : j;
 }
 
+// const 入参版本
 template <class T, class Compare>
-typename rb_tree<T, Compare>::const_iterator
-rb_tree<T, Compare>::
-find(const key_type& key) const
-{
+typename rb_tree<T, Compare>::const_iterator rb_tree<T, Compare>::find(const key_type& key) const {
   auto y = header_;  // 最后一个不小于 key 的节点
   auto x = root();
-  while (x != nullptr)
-  {
-    if (!key_comp_(value_traits::get_key(x->get_node_ptr()->value), key))
-    { // key 小于等于 x 键值，向左走
-      y = x, x = x->left;
-    }
-    else
-    { // key 大于 x 键值，向右走
+  while (x != nullptr) {
+    if (!key_comp_(value_traits::get_key(x->get_node_ptr()->value), key)) { // key 小于等于 x 键值，向左走
+      y = x;
+      x = x->left;
+    } else { // key 大于 x 键值，向右走
       x = x->right;
     }
   }
@@ -1266,22 +1199,18 @@ find(const key_type& key) const
   return (j == end() || key_comp_(key, value_traits::get_key(*j))) ? end() : j;
 }
 
-// 键值不小于 key 的第一个位置
+// 键值 >=key 的第一个位置
 template <class T, class Compare>
 typename rb_tree<T, Compare>::iterator
-rb_tree<T, Compare>::
-lower_bound(const key_type& key)
-{
+rb_tree<T, Compare>::lower_bound(const key_type& key) {
   auto y = header_;
   auto x = root();
-  while (x != nullptr)
-  {
-    if (!key_comp_(value_traits::get_key(x->get_node_ptr()->value), key))
-    { // key <= x
-      y = x, x = x->left;
-    }
-    else
-    {
+  while (x != nullptr) {
+    // 往小了找
+    if (!key_comp_(value_traits::get_key(x->get_node_ptr()->value), key)) { // key <= x 向左，并用 y 标记子树
+      y = x;
+      x = x->left;
+    } else { // key > x  往大了找，不用标记子树
       x = x->right;
     }
   }
@@ -1290,41 +1219,31 @@ lower_bound(const key_type& key)
 
 template <class T, class Compare>
 typename rb_tree<T, Compare>::const_iterator
-rb_tree<T, Compare>::
-lower_bound(const key_type& key) const
-{
+rb_tree<T, Compare>::lower_bound(const key_type& key) const {
   auto y = header_;
   auto x = root();
-  while (x != nullptr)
-  {
-    if (!key_comp_(value_traits::get_key(x->get_node_ptr()->value), key))
-    { // key <= x
-      y = x, x = x->left;
-    }
-    else
-    {
+  while (x != nullptr) {
+    if (!key_comp_(value_traits::get_key(x->get_node_ptr()->value), key)) { // key <= x
+      y = x;
+      x = x->left;
+    } else {
       x = x->right;
     }
   }
   return const_iterator(y);
 }
 
-// 键值不小于 key 的最后一个位置
+// 键值 >key 的第一个位置
 template <class T, class Compare>
 typename rb_tree<T, Compare>::iterator
-rb_tree<T, Compare>::
-upper_bound(const key_type& key)
-{
+rb_tree<T, Compare>::upper_bound(const key_type& key) {
   auto y = header_;
   auto x = root();
-  while (x != nullptr)
-  {
-    if (key_comp_(key, value_traits::get_key(x->get_node_ptr()->value)))
-    { // key < x
-      y = x, x = x->left;
-    }
-    else
-    {
+  while (x != nullptr) {
+    if (key_comp_(key, value_traits::get_key(x->get_node_ptr()->value))) { // key < x 往小了找，并标记子树
+      y = x;
+      x = x->left;
+    } else { // key >= x 往大了找，不用标记子树
       x = x->right;
     }
   }
@@ -1333,19 +1252,14 @@ upper_bound(const key_type& key)
 
 template <class T, class Compare>
 typename rb_tree<T, Compare>::const_iterator
-rb_tree<T, Compare>::
-upper_bound(const key_type& key) const
-{
+rb_tree<T, Compare>::upper_bound(const key_type& key) const {
   auto y = header_;
   auto x = root();
-  while (x != nullptr)
-  {
-    if (key_comp_(key, value_traits::get_key(x->get_node_ptr()->value)))
-    { // key < x
-      y = x, x = x->left;
-    }
-    else
-    {
+  while (x != nullptr) {
+    if (key_comp_(key, value_traits::get_key(x->get_node_ptr()->value))) { // key < x
+      y = x;
+      x = x->left;
+    } else {
       x = x->right;
     }
   }
@@ -1354,11 +1268,8 @@ upper_bound(const key_type& key) const
 
 // 交换 rb tree
 template <class T, class Compare>
-void rb_tree<T, Compare>::
-swap(rb_tree& rhs) noexcept
-{
-  if (this != &rhs)
-  {
+void rb_tree<T, Compare>::swap(rb_tree& rhs) noexcept {
+  if (this != &rhs) {
     yastl::swap(header_, rhs.header_);
     yastl::swap(node_count_, rhs.node_count_);
     yastl::swap(key_comp_, rhs.key_comp_);
@@ -1389,9 +1300,7 @@ rb_tree<T, Compare>::create_node(Args&&... args) {
 // 复制一个结点
 template <class T, class Compare>
 typename rb_tree<T, Compare>::node_ptr
-rb_tree<T, Compare>::
-clone_node(base_ptr x)
-{
+rb_tree<T, Compare>::clone_node(base_ptr x) {
   node_ptr tmp = create_node(x->get_node_ptr()->value);
   tmp->color = x->color;
   tmp->left = nullptr;
@@ -1401,18 +1310,14 @@ clone_node(base_ptr x)
 
 // 销毁一个结点
 template <class T, class Compare>
-void rb_tree<T, Compare>::
-destroy_node(node_ptr p)
-{
+void rb_tree<T, Compare>::destroy_node(node_ptr p) {
   data_allocator::destroy(&p->value);
   node_allocator::deallocate(p);
 }
 
 // 初始化容器
 template <class T, class Compare>
-void rb_tree<T, Compare>::
-rb_tree_init()
-{
+void rb_tree<T, Compare>::rb_tree_init() {
   header_ = base_allocator::allocate(1);
   header_->color = rb_tree_red;  // header_ 节点颜色为红，与 root 区分
   root() = nullptr;
@@ -1423,8 +1328,7 @@ rb_tree_init()
 
 // reset 函数
 template <class T, class Compare>
-void rb_tree<T, Compare>::reset()
-{
+void rb_tree<T, Compare>::reset() {
   header_ = nullptr;
   node_count_ = 0;
 }
@@ -1531,56 +1435,43 @@ rb_tree<T, Compare>::insert_node_at(base_ptr x, node_ptr node, bool add_to_left)
 // 插入元素，键值允许重复，使用 hint
 template <class T, class Compare>
 typename rb_tree<T, Compare>::iterator 
-rb_tree<T, Compare>::
-insert_multi_use_hint(iterator hint, key_type key, node_ptr node)
-{
+rb_tree<T, Compare>::insert_multi_use_hint(iterator hint, key_type key, node_ptr node) {
   // 在 hint 附近寻找可插入的位置
   auto np = hint.node;
   auto before = hint;
   --before;
   auto bnp = before.node;
-  if (!key_comp_(key, value_traits::get_key(*before)) &&
-      !key_comp_(value_traits::get_key(*hint), key))
-  { // before <= node <= hint
-    if (bnp->right == nullptr)
-    {
+  // before <= node <= hint   hint生效
+  if (!key_comp_(key, value_traits::get_key(*before)) && !key_comp_(value_traits::get_key(*hint), key)) {
+    if (bnp->right == nullptr) { // 插在 hint 前驱右边
       return insert_node_at(bnp, node, false);
-    }
-    else if (np->left == nullptr)
-    {
+    } else if (np->left == nullptr) { // 插在 hint 左边
       return insert_node_at(np, node, true);
     }
   }
-  auto pos = get_insert_multi_pos(key);
+  auto pos = get_insert_multi_pos(key); // hint 不生效
   return insert_node_at(pos.first, node, pos.second);
 }
 
 // 插入元素，键值不允许重复，使用 hint
 template <class T, class Compare>
 typename rb_tree<T, Compare>::iterator 
-rb_tree<T, Compare>::
-insert_unique_use_hint(iterator hint, key_type key, node_ptr node)
-{
+rb_tree<T, Compare>::insert_unique_use_hint(iterator hint, key_type key, node_ptr node) {
   // 在 hint 附近寻找可插入的位置
   auto np = hint.node;
   auto before = hint;
   --before;
   auto bnp = before.node;
-  if (key_comp_(value_traits::get_key(*before), key) &&
-      key_comp_(key, value_traits::get_key(*hint)))
-  { // before < node < hint
-    if (bnp->right == nullptr)
-    {
+  // before < node < hint 使用 hint
+  if (key_comp_(value_traits::get_key(*before), key) && key_comp_(key, value_traits::get_key(*hint))) {
+    if (bnp->right == nullptr) { // 插在 hint 前驱右边
       return insert_node_at(bnp, node, false);
-    }
-    else if (np->left == nullptr)
-    {
+    } else if (np->left == nullptr) { // 插在 hint 后继左边
       return insert_node_at(np, node, true);
     }
   }
-  auto pos = get_insert_unique_pos(key);
-  if (!pos.second)
-  {
+  auto pos = get_insert_unique_pos(key); // 不使用 hint
+  if (!pos.second) { // 找不到位置就销毁 node
     destroy_node(node);
     return pos.first.first;
   }
@@ -1591,30 +1482,27 @@ insert_unique_use_hint(iterator hint, key_type key, node_ptr node)
 // 递归复制一颗树，节点从 x 开始，p 为 x 的父节点
 template <class T, class Compare>
 typename rb_tree<T, Compare>::base_ptr
-rb_tree<T, Compare>::copy_from(base_ptr x, base_ptr p)
-{
-  auto top = clone_node(x);
+rb_tree<T, Compare>::copy_from(base_ptr x, base_ptr p) {
+  auto top = clone_node(x); // 复制 x 节点
   top->parent = p;
-  try
-  {
-    if (x->right)
+  try {
+    if (x->right) { // 复制 x 右侧的树
       top->right = copy_from(x->right, top);
+    }
     p = top;
-    x = x->left;
-    while (x != nullptr)
-    {
-      auto y = clone_node(x);
+    x = x->left; // 准备复制 x 左侧
+    while (x != nullptr) {
+      auto y = clone_node(x); // 复制 x' 节点
       p->left = y;
       y->parent = p;
-      if (x->right)
+      if (x->right) { // 复制 x' 右侧节点
         y->right = copy_from(x->right, y);
+      }
       p = y;
       x = x->left;
     }
-  }
-  catch (...)
-  {
-    erase_since(top);
+  } catch (...) {
+    erase_since(top); // 销毁构造的树
     throw;
   }
   return top;
@@ -1623,62 +1511,51 @@ rb_tree<T, Compare>::copy_from(base_ptr x, base_ptr p)
 // erase_since 函数
 // 从 x 节点开始删除该节点及其子树
 template <class T, class Compare>
-void rb_tree<T, Compare>::
-erase_since(base_ptr x)
-{
-  while (x != nullptr)
-  {
-    erase_since(x->right);
+void rb_tree<T, Compare>::erase_since(base_ptr x) {
+  while (x != nullptr) { // while 循环的意义在于一直向左遍历
+    erase_since(x->right); // 销毁右侧
     auto y = x->left;
-    destroy_node(x->get_node_ptr());
-    x = y;
+    destroy_node(x->get_node_ptr()); // 销毁 x
+    x = y; // 继续让 x 为 x 的左侧继续销毁
   }
 }
 
-// 重载比较操作符
+// 重载比较操作符 中序遍历相等则相等
 template <class T, class Compare>
-bool operator==(const rb_tree<T, Compare>& lhs, const rb_tree<T, Compare>& rhs)
-{
+bool operator==(const rb_tree<T, Compare>& lhs, const rb_tree<T, Compare>& rhs) {
   return lhs.size() == rhs.size() && yastl::equal(lhs.begin(), lhs.end(), rhs.begin());
 }
 
 template <class T, class Compare>
-bool operator<(const rb_tree<T, Compare>& lhs, const rb_tree<T, Compare>& rhs)
-{
+bool operator<(const rb_tree<T, Compare>& lhs, const rb_tree<T, Compare>& rhs) {
   return yastl::lexicographical_compare(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
 }
 
 template <class T, class Compare>
-bool operator!=(const rb_tree<T, Compare>& lhs, const rb_tree<T, Compare>& rhs)
-{
+bool operator!=(const rb_tree<T, Compare>& lhs, const rb_tree<T, Compare>& rhs) {
   return !(lhs == rhs);
 }
 
 template <class T, class Compare>
-bool operator>(const rb_tree<T, Compare>& lhs, const rb_tree<T, Compare>& rhs)
-{
+bool operator>(const rb_tree<T, Compare>& lhs, const rb_tree<T, Compare>& rhs) {
   return rhs < lhs;
 }
 
 template <class T, class Compare>
-bool operator<=(const rb_tree<T, Compare>& lhs, const rb_tree<T, Compare>& rhs)
-{
+bool operator<=(const rb_tree<T, Compare>& lhs, const rb_tree<T, Compare>& rhs) {
   return !(rhs < lhs);
 }
 
 template <class T, class Compare>
-bool operator>=(const rb_tree<T, Compare>& lhs, const rb_tree<T, Compare>& rhs)
-{
+bool operator>=(const rb_tree<T, Compare>& lhs, const rb_tree<T, Compare>& rhs) {
   return !(lhs < rhs);
 }
 
 // 重载 yastl 的 swap
 template <class T, class Compare>
-void swap(rb_tree<T, Compare>& lhs, rb_tree<T, Compare>& rhs) noexcept
-{
+void swap(rb_tree<T, Compare>& lhs, rb_tree<T, Compare>& rhs) noexcept {
   lhs.swap(rhs);
 }
-
 } // namespace yastl
-#endif // !MYTINYSTL_RB_TREE_H_
+#endif // _INCLUDE_RB_TREE_H_
 

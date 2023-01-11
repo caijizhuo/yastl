@@ -341,12 +341,11 @@ bool equal(InputIter1 first1, InputIter1 last1, InputIter2 first2) {
 
 // 重载版本使用函数对象 comp 代替比较操作
 template <class InputIter1, class InputIter2, class Compared>
-bool equal(InputIter1 first1, InputIter1 last1, InputIter2 first2, Compared comp)
-{
-  for (; first1 != last1; ++first1, ++first2)
-  {
-    if (!comp(*first1, *first2))  
+bool equal(InputIter1 first1, InputIter1 last1, InputIter2 first2, Compared comp) {
+  for (; first1 != last1; ++first1, ++first2) {
+    if (!comp(*first1, *first2)) {
       return false;
+    }
   }
   return true;
 }
