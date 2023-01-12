@@ -31,7 +31,7 @@ template <class T> struct rb_tree_iterator;
 template <class T> struct rb_tree_const_iterator;
 
 // rb tree value traits
-
+// 给 set 用的
 template <class T, bool>
 struct rb_tree_value_traits_imp {
   typedef T key_type;
@@ -49,11 +49,12 @@ struct rb_tree_value_traits_imp {
   }
 };
 
+// 给 map 用的
 template <class T>
 struct rb_tree_value_traits_imp<T, true> { // 如果T是个pair的话就是true
   // remove_cv : 如果不带有const和volatile 返回true
-  typedef typename std::remove_cv<typename T::first_type>::type key_type;
-  typedef typename T::second_type mapped_type;
+  typedef typename std::remove_cv<typename T::first_type>::type key_type; // key type是键值的类型
+  typedef typename T::second_type mapped_type;  // mapped_type 是value的类型
   typedef T value_type;
 
   template <class Ty>
@@ -62,7 +63,7 @@ struct rb_tree_value_traits_imp<T, true> { // 如果T是个pair的话就是true
   }
 
   template <class Ty>
-  static const value_type& get_value(const Ty& value) { // 返回pair
+  static const value_type& get_value(const Ty& value) { // 返回值本身
     return value;
   }
 };
@@ -891,7 +892,7 @@ public:
   iterator upper_bound(const key_type& key);
   const_iterator upper_bound(const key_type& key) const;
 
-  // 删除 key 的所有节点，返回等于 key 的迭代器左区间和右区间
+  // 删除 key 的所有节点，返回等于 key 的迭代器左区间和右区间，左闭右开
   yastl::pair<iterator, iterator> equal_range_multi(const key_type& key) {
     return yastl::pair<iterator, iterator>(lower_bound(key), upper_bound(key));
   }
@@ -1199,7 +1200,7 @@ typename rb_tree<T, Compare>::const_iterator rb_tree<T, Compare>::find(const key
   return (j == end() || key_comp_(key, value_traits::get_key(*j))) ? end() : j;
 }
 
-// 键值 >=key 的第一个位置
+// 键值 >=key 的第一个位置, 找不到返回header_，也就是end()
 template <class T, class Compare>
 typename rb_tree<T, Compare>::iterator
 rb_tree<T, Compare>::lower_bound(const key_type& key) {

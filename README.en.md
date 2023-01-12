@@ -24,4 +24,5 @@ Yet another STL for learning.
 ├── rb_tree.h           红黑树实现                                  100%
 ├── map.h               map实现，依赖红黑树                          100%
 ├── set.h               set实现，依赖红黑树                          100%
+├── set_algo.h          set算法实现，集合操作                        100%
 └── vector.h            vector实现                                  100%
