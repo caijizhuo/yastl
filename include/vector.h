@@ -41,8 +41,7 @@ namespace yastl
 // 模板类: vector 
 // 模板参数 T 代表类型
 template <class T>
-class vector
-{
+class vector {
   static_assert(!std::is_same<bool, T>::value, "vector<bool> is abandoned in yastl");
 public:
   // vector 的嵌套型别定义
