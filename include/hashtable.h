@@ -155,7 +155,7 @@ struct ht_iterator : public ht_iterator_base<T, Hash, KeyEqual> {
   typedef typename base::iterator iterator;
   typedef typename base::const_iterator const_iterator;
   typedef typename base::node_ptr node_ptr;
-  typedef typename base::contain_ptr contain_ptr;
+  typedef typename base::contain_ptr contain_ptr; // 指向 hashtable 的指针
 
   typedef ht_value_traits<T> value_traits;
   typedef T value_type;
@@ -448,133 +448,124 @@ static constexpr size_t ht_prime_list[] = {
 
 #endif
 
-// 找出最接近并大于等于 n 的那个质数
-inline size_t ht_next_prime(size_t n)
-{
+// 找出最接近并 >=n 的那个质数
+inline size_t ht_next_prime(size_t n) {
   const size_t* first = ht_prime_list;
   const size_t* last = ht_prime_list + PRIME_NUM;
   const size_t* pos = yastl::lower_bound(first, last, n);
-  return pos == last ? *(last - 1) : *pos;
+  return pos == last ? *(last - 1) : *pos; // 找不到就用最大的，否则就用最接近的
 }
 
 // 模板类 hashtable
 // 参数一代表数据类型，参数二代表哈希函数，参数三代表键值相等的比较函数
 template <class T, class Hash, class KeyEqual>
-class hashtable
-{  
+class hashtable {  
 
   friend struct yastl::ht_iterator<T, Hash, KeyEqual>;
   friend struct yastl::ht_const_iterator<T, Hash, KeyEqual>;
 
 public:
   // hashtable 的型别定义
-  typedef ht_value_traits<T>                          value_traits;
-  typedef typename value_traits::key_type             key_type;
-  typedef typename value_traits::mapped_type          mapped_type;
-  typedef typename value_traits::value_type           value_type;
-  typedef Hash                                        hasher;
-  typedef KeyEqual                                    key_equal;
+  typedef ht_value_traits<T> value_traits;
+  typedef typename value_traits::key_type key_type;
+  typedef typename value_traits::mapped_type mapped_type;
+  typedef typename value_traits::value_type value_type;
+  typedef Hash hasher;
+  typedef KeyEqual key_equal;
 
-  typedef hashtable_node<T>                           node_type;
-  typedef node_type*                                  node_ptr;
-  typedef yastl::vector<node_ptr>                     bucket_type;
+  typedef hashtable_node<T> node_type;
+  typedef node_type* node_ptr;
+  typedef yastl::vector<node_ptr> bucket_type; // 桶的类别 vector
 
-  typedef yastl::allocator<T>                         allocator_type;
-  typedef yastl::allocator<T>                         data_allocator;
-  typedef yastl::allocator<node_type>                 node_allocator;
+  typedef yastl::allocator<T> allocator_type;
+  typedef yastl::allocator<T> data_allocator;
+  typedef yastl::allocator<node_type> node_allocator;
 
-  typedef typename allocator_type::pointer            pointer;
-  typedef typename allocator_type::const_pointer      const_pointer;
-  typedef typename allocator_type::reference          reference;
-  typedef typename allocator_type::const_reference    const_reference;
-  typedef typename allocator_type::size_type          size_type;
-  typedef typename allocator_type::difference_type    difference_type;
+  typedef typename allocator_type::pointer pointer;
+  typedef typename allocator_type::const_pointer const_pointer;
+  typedef typename allocator_type::reference reference;
+  typedef typename allocator_type::const_reference const_reference;
+  typedef typename allocator_type::size_type size_type;
+  typedef typename allocator_type::difference_type difference_type;
 
-  typedef yastl::ht_iterator<T, Hash, KeyEqual>       iterator;
+  typedef yastl::ht_iterator<T, Hash, KeyEqual> iterator;
   typedef yastl::ht_const_iterator<T, Hash, KeyEqual> const_iterator;
-  typedef yastl::ht_local_iterator<T>                 local_iterator;
-  typedef yastl::ht_const_local_iterator<T>           const_local_iterator;
+  typedef yastl::ht_local_iterator<T> local_iterator;
+  typedef yastl::ht_const_local_iterator<T> const_local_iterator;
 
-  allocator_type get_allocator() const { return allocator_type(); }
+  allocator_type get_allocator() const {
+    return allocator_type();
+  }
 
 private:
   // 用以下六个参数来表现 hashtable
-  bucket_type buckets_;
-  size_type   bucket_size_;
-  size_type   size_;
-  float       mlf_;
-  hasher      hash_;
-  key_equal   equal_;
+  bucket_type buckets_; // 桶的 vector
+  size_type bucket_size_; // 桶的数量
+  size_type size_; // 元素个数
+  float mlf_; // max load factor 最大负载系数
+  hasher hash_; // 哈希函数
+  key_equal equal_; // 键值相等的比较函数
 
 private:
-  bool is_equal(const key_type& key1, const key_type& key2)
-  {
+  bool is_equal(const key_type& key1, const key_type& key2) {
     return equal_(key1, key2);
   }
 
-  bool is_equal(const key_type& key1, const key_type& key2) const
-  {
+  bool is_equal(const key_type& key1, const key_type& key2) const {
     return equal_(key1, key2);
   }
 
-  const_iterator M_cit(node_ptr node) const noexcept
-  {
+  // change const iterator 把 node 强制转换为指向 hashtable 的 const 指针
+  const_iterator M_cit(node_ptr node) const noexcept {
     return const_iterator(node, const_cast<hashtable*>(this));
   }
 
-  iterator M_begin() noexcept
-  {
-    for (size_type n = 0; n < bucket_size_; ++n)
-    {
-      if (buckets_[n])  // 找到第一个有节点的位置就返回
+  // 找到第一个有节点的位置就返回
+  iterator M_begin() noexcept {
+    for (size_type n = 0; n < bucket_size_; ++n) {
+      if (buckets_[n]) {
         return iterator(buckets_[n], this);
+      }
     }
     return iterator(nullptr, this);
   }
 
-  const_iterator M_begin() const noexcept
-  {
-    for (size_type n = 0; n < bucket_size_; ++n)
-    {
-      if (buckets_[n])  // 找到第一个有节点的位置就返回
+  const_iterator M_begin() const noexcept {
+    for (size_type n = 0; n < bucket_size_; ++n) {
+      if (buckets_[n]) { // 找到第一个有节点的位置就返回
         return M_cit(buckets_[n]);
+      }
     }
     return M_cit(nullptr);
   }
 
 public:
   // 构造、复制、移动、析构函数
-  explicit hashtable(size_type bucket_count,
-                     const Hash& hash = Hash(),
-                     const KeyEqual& equal = KeyEqual())
-    :size_(0), mlf_(1.0f), hash_(hash), equal_(equal)
-  {
+
+  // 构造函数
+  explicit hashtable(size_type bucket_count, const Hash& hash = Hash(), const KeyEqual& equal = KeyEqual())
+    : size_(0), mlf_(1.0f), hash_(hash), equal_(equal) {
     init(bucket_count);
   }
 
-  template <class Iter, typename std::enable_if<
-    yastl::is_input_iterator<Iter>::value, int>::type = 0>
-    hashtable(Iter first, Iter last,
-              size_type bucket_count,
-              const Hash& hash = Hash(),
-              const KeyEqual& equal = KeyEqual())
-    :size_(yastl::distance(first, last)), mlf_(1.0f), hash_(hash), equal_(equal)
-  {
+  // 调用迭代器构造
+  template <class Iter, typename std::enable_if<yastl::is_input_iterator<Iter>::value, int>::type = 0>
+    hashtable(Iter first, Iter last, size_type bucket_count, const Hash& hash = Hash(), const KeyEqual& equal = KeyEqual())
+    : size_(yastl::distance(first, last)), mlf_(1.0f), hash_(hash), equal_(equal) {
     init(yastl::max(bucket_count, static_cast<size_type>(yastl::distance(first, last))));
   }
 
-  hashtable(const hashtable& rhs)
-    :hash_(rhs.hash_), equal_(rhs.equal_)
-  {
+  // 拷贝构造
+  hashtable(const hashtable& rhs) : hash_(rhs.hash_), equal_(rhs.equal_) {
     copy_init(rhs);
   }
-  hashtable(hashtable&& rhs) noexcept
-    : bucket_size_(rhs.bucket_size_), 
+
+  // 移动构造
+  hashtable(hashtable&& rhs) noexcept : bucket_size_(rhs.bucket_size_), 
     size_(rhs.size_),
     mlf_(rhs.mlf_),
     hash_(rhs.hash_),
-    equal_(rhs.equal_)
-  {
+    equal_(rhs.equal_) {
     buckets_ = yastl::move(rhs.buckets_);
     rhs.bucket_size_ = 0;
     rhs.size_ = 0;
@@ -584,27 +575,41 @@ public:
   hashtable& operator=(const hashtable& rhs);
   hashtable& operator=(hashtable&& rhs) noexcept;
 
-  ~hashtable() { clear(); }
+  ~hashtable() {
+    clear();
+  }
 
   // 迭代器相关操作
-  iterator       begin()        noexcept
-  { return M_begin(); }
-  const_iterator begin()  const noexcept
-  { return M_begin(); }
-  iterator       end()          noexcept
-  { return iterator(nullptr, this); }
-  const_iterator end()    const noexcept
-  { return M_cit(nullptr); }
+  iterator begin() noexcept {
+    return M_begin();
+  }
+  const_iterator begin() const noexcept {
+    return M_begin();
+  }
+  iterator end() noexcept {
+    return iterator(nullptr, this);
+  }
+  const_iterator end() const noexcept {
+    return M_cit(nullptr);
+  }
   
-  const_iterator cbegin() const noexcept
-  { return begin(); }
-  const_iterator cend()   const noexcept
-  { return end(); }
+  const_iterator cbegin() const noexcept {
+    return begin();
+  }
+  const_iterator cend() const noexcept {
+    return end();
+  }
 
   // 容量相关操作
-  bool      empty()    const noexcept { return size_ == 0; }
-  size_type size()     const noexcept { return size_; }
-  size_type max_size() const noexcept { return static_cast<size_type>(-1); }
+  bool empty() const noexcept {
+    return size_ == 0;
+  }
+  size_type size() const noexcept {
+    return size_;
+  }
+  size_type max_size() const noexcept {
+    return static_cast<size_type>(-1);
+  }
 
   // 修改容器相关操作
 
@@ -1256,17 +1261,12 @@ swap(hashtable& rhs) noexcept
 
 // init 函数
 template <class T, class Hash, class KeyEqual>
-void hashtable<T, Hash, KeyEqual>::
-init(size_type n)
-{
-  const auto bucket_nums = next_size(n);
-  try
-  {
-    buckets_.reserve(bucket_nums);
+void hashtable<T, Hash, KeyEqual>::init(size_type n) {
+  const auto bucket_nums = next_size(n); // 找到一个 >= n 的质数
+  try {
+    buckets_.reserve(bucket_nums); // 分配空间
     buckets_.assign(bucket_nums, nullptr);
-  }
-  catch (...)
-  {
+  } catch (...) {
     bucket_size_ = 0;
     size_ = 0;
     throw;
@@ -1276,35 +1276,27 @@ init(size_type n)
 
 // copy_init 函数
 template <class T, class Hash, class KeyEqual>
-void hashtable<T, Hash, KeyEqual>::
-copy_init(const hashtable& ht)
-{
+void hashtable<T, Hash, KeyEqual>::copy_init(const hashtable& ht) {
   bucket_size_ = 0;
   buckets_.reserve(ht.bucket_size_);
   buckets_.assign(ht.bucket_size_, nullptr);
-  try
-  {
-    for (size_type i = 0; i < ht.bucket_size_; ++i)
-    {
+  try {
+    for (size_type i = 0; i < ht.bucket_size_; ++i) {
       node_ptr cur = ht.buckets_[i];
-      if (cur)
-      { // 如果某 bucket 存在链表
+      if (cur) { // 如果某 bucket 存在链表
         auto copy = create_node(cur->value);
         buckets_[i] = copy;
-        for (auto next = cur->next; next; cur = next, next = cur->next)
-        {  //复制链表
+        for (auto next = cur->next; next; cur = next, next = cur->next) { // 遍历并复制链表
           copy->next = create_node(next->value);
           copy = copy->next;
         }
-        copy->next = nullptr;
+        copy->next = nullptr; // 最后的空指针
       }
     }
     bucket_size_ = ht.bucket_size_;
     mlf_ = ht.mlf_;
     size_ = ht.size_;
-  }
-  catch (...)
-  {
+  } catch (...) {
     clear();
   }
 }
