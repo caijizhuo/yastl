@@ -85,7 +85,7 @@ public:
   // 如果传入的参数是迭代器
   template <class Iter, typename std::enable_if<yastl::is_input_iterator<Iter>::value, int>::type = 0>
   vector(Iter first, Iter last) {
-    yastl_DEBUG(!(last < first));
+    YASTL_DEBUG(!(last < first));
     range_init(first, last);
   }
 
@@ -182,11 +182,11 @@ public:
 
   // 访问元素相关操作
   reference operator[](size_type n) {
-    yastl_DEBUG(n < size());
+    YASTL_DEBUG(n < size());
     return *(begin_ + n);
   }
   const_reference operator[](size_type n) const {
-    yastl_DEBUG(n < size());
+    YASTL_DEBUG(n < size());
     return *(begin_ + n);
   }
   // 和[]返回结果相同
@@ -200,19 +200,19 @@ public:
   }
 
   reference front() {
-    yastl_DEBUG(!empty());
+    YASTL_DEBUG(!empty());
     return *begin_;
   }
   const_reference front() const {
-    yastl_DEBUG(!empty());
+    YASTL_DEBUG(!empty());
     return *begin_;
   }
   reference back() {
-    yastl_DEBUG(!empty());
+    YASTL_DEBUG(!empty());
     return *(end_ - 1);
   }
   const_reference back() const {
-    yastl_DEBUG(!empty());
+    YASTL_DEBUG(!empty());
     return *(end_ - 1);
   }
 
@@ -234,7 +234,7 @@ public:
   // 把本vector赋值成[first, last)的内容
   template <class Iter, typename std::enable_if<yastl::is_input_iterator<Iter>::value, int>::type = 0>
   void assign(Iter first, Iter last) {
-    yastl_DEBUG(!(last < first));
+    YASTL_DEBUG(!(last < first));
     copy_assign(first, last, iterator_category(first));
   }
   // 用initializer_list来初始化
@@ -268,13 +268,13 @@ public:
   }
   // 在 pos插入n个value
   iterator insert(const_iterator pos, size_type n, const value_type& value) {
-    yastl_DEBUG(pos >= begin() && pos <= end());
+    YASTL_DEBUG(pos >= begin() && pos <= end());
     return fill_insert(const_cast<iterator>(pos), n, value);
   }
   // 在pos 插入[first, last)
   template <class Iter, typename std::enable_if<yastl::is_input_iterator<Iter>::value, int>::type = 0>
   void insert(const_iterator pos, Iter first, Iter last) {
-    yastl_DEBUG(pos >= begin() && pos <= end() && !(last < first));
+    YASTL_DEBUG(pos >= begin() && pos <= end() && !(last < first));
     copy_insert(const_cast<iterator>(pos), first, last);
   }
 
@@ -410,7 +410,7 @@ template <class T>
 template <class ...Args>
 typename vector<T>::iterator
 vector<T>::emplace(const_iterator pos, Args&& ...args) {
-  yastl_DEBUG(pos >= begin() && pos <= end());
+  YASTL_DEBUG(pos >= begin() && pos <= end());
   iterator xpos = const_cast<iterator>(pos);
   const size_type n = xpos - begin_;
   if (end_ != cap_ && xpos == end_) { // 在最后插入的，但是没到cap_
@@ -455,7 +455,7 @@ void vector<T>::push_back(const value_type& value) {
 // 弹出尾部元素
 template <class T>
 void vector<T>::pop_back() {
-  yastl_DEBUG(!empty());
+  YASTL_DEBUG(!empty());
   data_allocator::destroy(end_ - 1); // 析构最后一个元素
   --end_;
 }
@@ -463,7 +463,7 @@ void vector<T>::pop_back() {
 // 在 pos 处插入元素，拷贝构造的方式
 template <class T>
 typename vector<T>::iterator vector<T>::insert(const_iterator pos, const value_type& value) {
-  yastl_DEBUG(pos >= begin() && pos <= end());
+  YASTL_DEBUG(pos >= begin() && pos <= end());
   iterator xpos = const_cast<iterator>(pos);
   const size_type n = pos - begin_;
   if (end_ != cap_ && xpos == end_) { // 没超过容量并且是插入在最后
@@ -487,7 +487,7 @@ typename vector<T>::iterator vector<T>::insert(const_iterator pos, const value_t
 template <class T>
 typename vector<T>::iterator
 vector<T>::erase(const_iterator pos) {
-  yastl_DEBUG(pos >= begin() && pos < end());
+  YASTL_DEBUG(pos >= begin() && pos < end());
   iterator xpos = begin_ + (pos - begin());
   yastl::move(xpos + 1, end_, xpos); // 把[pos + 1, end)移动到[pos, end - 1)
   data_allocator::destroy(end_ - 1); // 析构最后一个元素
@@ -498,7 +498,7 @@ vector<T>::erase(const_iterator pos) {
 // 删除[first, last)上的元素
 template <class T>
 typename vector<T>::iterator vector<T>::erase(const_iterator first, const_iterator last) {
-  yastl_DEBUG(first >= begin() && last <= end() && !(last < first));
+  YASTL_DEBUG(first >= begin() && last <= end() && !(last < first));
   const auto n = first - begin();
   iterator r = begin_ + (first - begin()); // 为了构造一个非const的值供下面函数使用
   // data_allocator::destroy(yastl::move(end_ - n, end_, r), end_); // 后面的元素往前移动(last - first)个

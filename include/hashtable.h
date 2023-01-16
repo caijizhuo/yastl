@@ -459,7 +459,7 @@ inline size_t ht_next_prime(size_t n) {
 // 模板类 hashtable
 // 参数一代表数据类型，参数二代表哈希函数，参数三代表键值相等的比较函数
 template <class T, class Hash, class KeyEqual>
-class hashtable {  
+class hashtable {
 
   friend struct yastl::ht_iterator<T, Hash, KeyEqual>;
   friend struct yastl::ht_const_iterator<T, Hash, KeyEqual>;
@@ -475,7 +475,7 @@ public:
 
   typedef hashtable_node<T> node_type;
   typedef node_type* node_ptr;
-  typedef yastl::vector<node_ptr> bucket_type; // 桶的类别 vector
+  typedef yastl::vector<node_ptr> bucket_type; // 桶的类别 vector，元素为指向 hashnode 的指针
 
   typedef yastl::allocator<T> allocator_type;
   typedef yastl::allocator<T> data_allocator;
@@ -624,139 +624,161 @@ public:
   // [note]: hint 对于 hash_table 其实没有意义，因为即使提供了 hint，也要做一次 hash，
   // 来确保 hash_table 的性质，所以选择忽略它
   template <class ...Args>
-  iterator emplace_multi_use_hint(const_iterator /*hint*/, Args&& ...args)
-  { return emplace_multi(yastl::forward<Args>(args)...); }
+  iterator emplace_multi_use_hint(const_iterator /*hint*/, Args&& ...args) {
+    return emplace_multi(yastl::forward<Args>(args)...);
+  }
 
   template <class ...Args>
-  iterator emplace_unique_use_hint(const_iterator /*hint*/, Args&& ...args)
-  { return emplace_unique(yastl::forward<Args>(args)...).first; }
+  iterator emplace_unique_use_hint(const_iterator /*hint*/, Args&& ...args) {
+    return emplace_unique(yastl::forward<Args>(args)...).first;
+  }
 
   // insert
-
-  iterator             insert_multi_noresize(const value_type& value);
+  // 不需要重新 hash 的方式
+  iterator insert_multi_noresize(const value_type& value);
   pair<iterator, bool> insert_unique_noresize(const value_type& value);
 
-  iterator insert_multi(const value_type& value)
-  {
-    rehash_if_need(1);
+  iterator insert_multi(const value_type& value) {
+    rehash_if_need(1); // 增加一个单位 判断是否需要重新分配空间
     return insert_multi_noresize(value);
   }
-  iterator insert_multi(value_type&& value)
-  { return emplace_multi(yastl::move(value)); }
 
+  iterator insert_multi(value_type&& value) {
+    return emplace_multi(yastl::move(value));
+  }
 
-  pair<iterator, bool> insert_unique(const value_type& value)
-  {
+  pair<iterator, bool> insert_unique(const value_type& value) {
     rehash_if_need(1);
     return insert_unique_noresize(value);
   }
-  pair<iterator, bool> insert_unique(value_type&& value)
-  { return emplace_unique(yastl::move(value)); }
+
+  pair<iterator, bool> insert_unique(value_type&& value) {
+    return emplace_unique(yastl::move(value));
+  }
 
   // [note]: 同 emplace_hint
-  iterator insert_multi_use_hint(const_iterator /*hint*/, const value_type& value)
-  { return insert_multi(value); }
-  iterator insert_multi_use_hint(const_iterator /*hint*/, value_type&& value)
-  { return emplace_multi(yastl::move(value)); }
+  iterator insert_multi_use_hint(const_iterator /*hint*/, const value_type& value) {
+    return insert_multi(value);
+  }
+  // 移动构造 value
+  iterator insert_multi_use_hint(const_iterator /*hint*/, value_type&& value) {
+    return emplace_multi(yastl::move(value));
+  }
 
-  iterator insert_unique_use_hint(const_iterator /*hint*/, const value_type& value)
-  { return insert_unique(value).first; }
-  iterator insert_unique_use_hint(const_iterator /*hint*/, value_type&& value)
-  { return emplace_unique(yastl::move(value)); }
+  iterator insert_unique_use_hint(const_iterator /*hint*/, const value_type& value) {
+    return insert_unique(value).first;
+  }
+  iterator insert_unique_use_hint(const_iterator /*hint*/, value_type&& value) {
+    return emplace_unique(yastl::move(value));
+  }
 
+  // 插入[first, last) 内的元素到 hashtable 中，允许重复
   template <class InputIter>
-  void insert_multi(InputIter first, InputIter last)
-  { copy_insert_multi(first, last, iterator_category(first)); }
+  void insert_multi(InputIter first, InputIter last) {
+    copy_insert_multi(first, last, iterator_category(first));
+  }
 
+  // 插入[first, last) 内的元素到 hashtable 中，不允许重复
   template <class InputIter>
-  void insert_unique(InputIter first, InputIter last)
-  { copy_insert_unique(first, last, iterator_category(first)); }
+  void insert_unique(InputIter first, InputIter last) {
+    copy_insert_unique(first, last, iterator_category(first));
+  }
 
   // erase / clear
 
-  void      erase(const_iterator position);
-  void      erase(const_iterator first, const_iterator last);
+  void erase(const_iterator position);
+  void erase(const_iterator first, const_iterator last);
 
+  // 在允许重复的的 hashtable 中删除 key
   size_type erase_multi(const key_type& key);
+  // 在允许重复的的 hashtable 中删除 key
   size_type erase_unique(const key_type& key);
 
-  void      clear();
+  void clear();
 
-  void      swap(hashtable& rhs) noexcept;
+  void swap(hashtable& rhs) noexcept;
 
   // 查找相关操作
 
-  size_type                            count(const key_type& key) const;
+  size_type count(const key_type& key) const;
 
-  iterator                             find(const key_type& key);
-  const_iterator                       find(const key_type& key) const;
+  iterator find(const key_type& key);
+  const_iterator find(const key_type& key) const;
 
-  pair<iterator, iterator>             equal_range_multi(const key_type& key);
+  pair<iterator, iterator> equal_range_multi(const key_type& key);
   pair<const_iterator, const_iterator> equal_range_multi(const key_type& key) const;
 
-  pair<iterator, iterator>             equal_range_unique(const key_type& key);
+  pair<iterator, iterator> equal_range_unique(const key_type& key);
   pair<const_iterator, const_iterator> equal_range_unique(const key_type& key) const;
 
   // bucket interface
-
-  local_iterator       begin(size_type n)        noexcept
-  { 
+  // 返回第 n 个桶的第一个 hashnode 的迭代器
+  local_iterator begin(size_type n) noexcept {
     MYSTL_DEBUG(n < size_);
     return buckets_[n];
   }
-  const_local_iterator begin(size_type n)  const noexcept
-  { 
+  const_local_iterator begin(size_type n)  const noexcept {
     MYSTL_DEBUG(n < size_);
     return buckets_[n];
   }
-  const_local_iterator cbegin(size_type n) const noexcept
-  { 
+  const_local_iterator cbegin(size_type n) const noexcept {
     MYSTL_DEBUG(n < size_);
     return buckets_[n];
   }
 
-  local_iterator       end(size_type n)          noexcept
-  { 
+  // 返回 nullptr
+  local_iterator end(size_type n) noexcept {
+    MYSTL_DEBUG(n < size_);
+    return nullptr;
+  }
+  // 返回 nullptr
+  const_local_iterator end(size_type n) const noexcept {
     MYSTL_DEBUG(n < size_);
     return nullptr; 
   }
-  const_local_iterator end(size_type n)    const noexcept
-  { 
-    MYSTL_DEBUG(n < size_);
-    return nullptr; 
-  }
-  const_local_iterator cend(size_type n)   const noexcept
-  {
+  // 返回 const nullptr
+  const_local_iterator cend(size_type n) const noexcept {
     MYSTL_DEBUG(n < size_);
     return nullptr; 
   }
 
-  size_type bucket_count()                 const noexcept
-  { return bucket_size_; }
-  size_type max_bucket_count()             const noexcept
-  { return ht_prime_list[PRIME_NUM - 1]; }
+  // 现有桶的数量
+  size_type bucket_count() const noexcept {
+    return bucket_size_;
+  }
+  // 最大可配置的桶的数量
+  size_type max_bucket_count() const noexcept {
+    return ht_prime_list[PRIME_NUM - 1];
+  }
 
-  size_type bucket_size(size_type n)       const noexcept;
-  size_type bucket(const key_type& key)    const
-  { return hash(key); }
+  size_type bucket_size(size_type n) const noexcept;
+  // 返回 key 应该所在的 bucket 的索引(size_type)
+  size_type bucket(const key_type& key) const {
+    return hash(key);
+  }
 
   // hash policy
+  // 负载系数 为元素个数 / 桶的个数
+  float load_factor() const noexcept {
+    return bucket_size_ != 0 ? (float)size_ / bucket_size_ : 0.0f;
+  }
 
-  float load_factor() const noexcept
-  { return bucket_size_ != 0 ? (float)size_ / bucket_size_ : 0.0f; }
-
-  float max_load_factor() const noexcept
-  { return mlf_; }
-  void max_load_factor(float ml)
-  {
+  // 一个阈值，返回 mlf_，所能接受的最大负载系数
+  float max_load_factor() const noexcept {
+    return mlf_;
+  }
+  // 设置最大负载系数
+  void max_load_factor(float ml) {
     THROW_OUT_OF_RANGE_IF(ml != ml || ml < 0, "invalid hash load factor");
     mlf_ = ml;
   }
-
+  // 重新 hash count 个 bucket
   void rehash(size_type count);
 
-  void reserve(size_type count)
-  { rehash(static_cast<size_type>((float)count / max_load_factor() + 0.5f)); }
+  // 预留 count 个 hashnode
+  void reserve(size_type count) {
+    rehash(static_cast<size_type>((float)count / max_load_factor() + 0.5f)); // （不知道这数哪来的）
+  }
 
   hasher    hash_fcn() const { return hash_; }
   key_equal key_eq()   const { return equal_; }
@@ -895,20 +917,17 @@ insert_unique_noresize(const value_type& value)
   return yastl::make_pair(iterator(tmp, this), true);
 }
 
-// 在不需要重建表格的情况下插入新节点，键值允许重复
+// 在不需要重建表格的情况下插入新节点，键值允许重复，返回插入的 hashnode 的迭代器
 template <class T, class Hash, class KeyEqual>
 typename hashtable<T, Hash, KeyEqual>::iterator
-hashtable<T, Hash, KeyEqual>::
-insert_multi_noresize(const value_type& value)
-{
+hashtable<T, Hash, KeyEqual>::insert_multi_noresize(const value_type& value) {
   const auto n = hash(value_traits::get_key(value));
   auto first = buckets_[n];
   auto tmp = create_node(value);
-  for (auto cur = first; cur; cur = cur->next)
-  {
-    if (is_equal(value_traits::get_key(cur->value), value_traits::get_key(value)))
-    { // 如果链表中存在相同键值的节点就马上插入，然后返回
-      tmp->next = cur->next;
+  for (auto cur = first; cur; cur = cur->next) {
+    // 如果链表中存在相同键值的节点就马上插入，然后返回
+    if (is_equal(value_traits::get_key(cur->value), value_traits::get_key(value))) {
+      tmp->next = cur->next; // 存在相同键值，插在它后面
       cur->next = tmp;
       ++size_;
       return iterator(tmp, this);
@@ -991,15 +1010,12 @@ erase(const_iterator first, const_iterator last)
   }
 }
 
-// 删除键值为 key 的节点
+// 删除键值为 key 的节点，返回删除的个数 (size_type)
 template <class T, class Hash, class KeyEqual>
 typename hashtable<T, Hash, KeyEqual>::size_type
-hashtable<T, Hash, KeyEqual>::
-erase_multi(const key_type& key)
-{
+hashtable<T, Hash, KeyEqual>::erase_multi(const key_type& key) {
   auto p = equal_range_multi(key);
-  if (p.first.node != nullptr)
-  {
+  if (p.first.node != nullptr) {
     erase(p.first, p.second);
     return yastl::distance(p.first, p.second);
   }
@@ -1078,21 +1094,15 @@ bucket_size(size_type n) const noexcept
   return result;
 }
 
-// 重新对元素进行一遍哈希，插入到新的位置
+// 重新对元素进行一遍哈希，插入到新的位置。count 为希望的哈希表大小
 template <class T, class Hash, class KeyEqual>
-void hashtable<T, Hash, KeyEqual>::
-rehash(size_type count)
-{
-  auto n = ht_next_prime(count);
-  if (n > bucket_size_)
-  {
+void hashtable<T, Hash, KeyEqual>::rehash(size_type count) {
+  auto n = ht_next_prime(count); // >=count 的最小质数
+  if (n > bucket_size_) { // 比现有的大小大
     replace_bucket(n);
-  }
-  else
-  {
-    if ((float)size_ / (float)n < max_load_factor() - 0.25f &&
-        (float)n < (float)bucket_size_ * 0.75)  // worth rehash
-    {
+  } else { // 比现有大小小
+    if (((float)size_ / (float)n < max_load_factor() - 0.25f) &&  // 调整后最大负载系数比现在还低 0.25 并且（不知这数哪来的）
+        ((float)n < (float)bucket_size_ * 0.75)) { // 新的大小比现有大小的 3/4 还小才值得重新调整
       replace_bucket(n);
     }
   }
@@ -1305,17 +1315,12 @@ void hashtable<T, Hash, KeyEqual>::copy_init(const hashtable& ht) {
 template <class T, class Hash, class KeyEqual>
 template <class ...Args>
 typename hashtable<T, Hash, KeyEqual>::node_ptr
-hashtable<T, Hash, KeyEqual>::
-create_node(Args&& ...args)
-{
+hashtable<T, Hash, KeyEqual>::create_node(Args&& ...args) {
   node_ptr tmp = node_allocator::allocate(1);
-  try
-  {
+  try {
     data_allocator::construct(yastl::address_of(tmp->value), yastl::forward<Args>(args)...);
     tmp->next = nullptr;
-  }
-  catch (...)
-  {
+  } catch (...) {
     node_allocator::deallocate(tmp);
     throw;
   }
@@ -1340,41 +1345,35 @@ hashtable<T, Hash, KeyEqual>::next_size(size_type n) const
   return ht_next_prime(n);
 }
 
-// hash 函数
+// hash 函数，调用 hash_ 函数后取余
 template <class T, class Hash, class KeyEqual>
 typename hashtable<T, Hash, KeyEqual>::size_type
-hashtable<T, Hash, KeyEqual>::
-hash(const key_type& key, size_type n) const
-{
+hashtable<T, Hash, KeyEqual>::hash(const key_type& key, size_type n) const {
   return hash_(key) % n;
 }
-
+// hash 函数，调用 hash_ 函数后取余
 template <class T, class Hash, class KeyEqual>
 typename hashtable<T, Hash, KeyEqual>::size_type
-hashtable<T, Hash, KeyEqual>::
-hash(const key_type& key) const
-{
+hashtable<T, Hash, KeyEqual>::hash(const key_type& key) const {
   return hash_(key) % bucket_size_;
 }
 
-// rehash_if_need 函数
+// rehash_if_need 函数, 增加大小为 n，计算是否需要重新排布 hashtable
 template <class T, class Hash, class KeyEqual>
-void hashtable<T, Hash, KeyEqual>::
-rehash_if_need(size_type n)
-{
-  if (static_cast<float>(size_ + n) > (float)bucket_size_ * max_load_factor())
+void hashtable<T, Hash, KeyEqual>::rehash_if_need(size_type n) {
+  if (static_cast<float>(size_ + n) > (float)bucket_size_ * max_load_factor()) {
     rehash(size_ + n);
+  }
 }
 
 // copy_insert
 template <class T, class Hash, class KeyEqual>
 template <class InputIter>
-void hashtable<T, Hash, KeyEqual>::
-copy_insert_multi(InputIter first, InputIter last, yastl::input_iterator_tag)
-{
-  rehash_if_need(yastl::distance(first, last));
-  for (; first != last; ++first)
+void hashtable<T, Hash, KeyEqual>::copy_insert_multi(InputIter first, InputIter last, yastl::input_iterator_tag) {
+  rehash_if_need(yastl::distance(first, last)); // 插入总元素
+  for (; first != last; ++first) {
     insert_multi_noresize(*first);
+  }
 }
 
 template <class T, class Hash, class KeyEqual>
@@ -1466,41 +1465,33 @@ insert_node_unique(node_ptr np)
   return yastl::make_pair(iterator(np, this), true);
 }
 
-// replace_bucket 函数
+// replace_bucket 函数，把现有的 bucket size 调整为 bucket_count
 template <class T, class Hash, class KeyEqual>
-void hashtable<T, Hash, KeyEqual>::
-replace_bucket(size_type bucket_count)
-{
-  bucket_type bucket(bucket_count);
-  if (size_ != 0)
-  {
-    for (size_type i = 0; i < bucket_size_; ++i)
-    {
-      for (auto first = buckets_[i]; first; first = first->next)
-      {
-        auto tmp = create_node(first->value);
-        const auto n = hash(value_traits::get_key(first->value), bucket_count);
-        auto f = bucket[n];
+void hashtable<T, Hash, KeyEqual>::replace_bucket(size_type bucket_count) {
+  bucket_type bucket(bucket_count); // 新建一个 bucket_count 的 vector
+  if (size_ != 0) { // 需要调整，若为空则直接换节省效率
+    for (size_type i = 0; i < bucket_size_; ++i) { // 对于每一个 bucket
+      for (auto first = buckets_[i]; first; first = first->next) { // 遍历每一条 old hashnode
+        auto tmp = create_node(first->value); // 复制 old hashnode
+        const auto n = hash(value_traits::get_key(first->value), bucket_count); // 重新计算在新的 bucket 中的索引
+        auto f = bucket[n]; // 新 bucket 的首个 hashnode
         bool is_inserted = false;
-        for (auto cur = f; cur; cur = cur->next)
-        {
-          if (is_equal(value_traits::get_key(cur->value), value_traits::get_key(first->value)))
-          {
-            tmp->next = cur->next;
-            cur->next = tmp;
+        for (auto cur = f; cur; cur = cur->next) { // 遍历 new bucket 的 hashnode
+          if (is_equal(value_traits::get_key(cur->value), value_traits::get_key(first->value))) {
+            tmp->next = cur->next; // 如果 new bucket 的某个 node 值和 old 的键值相等
+            cur->next = tmp; // 把 tmp 节点插入到 cur 后面，保证相同值在一块
             is_inserted = true;
             break;
           }
         }
-        if (!is_inserted)
-        {
-          tmp->next = f;
+        if (!is_inserted) {
+          tmp->next = f; // 把 tmp 插入到 new bucket 的头部
           bucket[n] = tmp;
         }
       }
     }
   }
-  buckets_.swap(bucket);
+  buckets_.swap(bucket); // 交换，出了函数会自动析构 bucket
   bucket_size_ = buckets_.size();
 }
 
