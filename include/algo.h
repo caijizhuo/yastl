@@ -1669,21 +1669,16 @@ bool is_permutation_aux(ForwardIter1 first1, ForwardIter1 last1,
 template <class ForwardIter1, class ForwardIter2, class BinaryPred>
 bool is_permutation(ForwardIter1 first1, ForwardIter1 last1,
                     ForwardIter2 first2, ForwardIter2 last2,
-                    BinaryPred pred)
-{
+                    BinaryPred pred) {
   return is_permutation_aux(first1, last1, first2, last2, pred);
 }
 
 template <class ForwardIter1, class ForwardIter2>
-bool is_permutation(ForwardIter1 first1, ForwardIter1 last1,
-                    ForwardIter2 first2, ForwardIter2 last2)
-{
+bool is_permutation(ForwardIter1 first1, ForwardIter1 last1, ForwardIter2 first2, ForwardIter2 last2) {
   typedef typename iterator_traits<ForwardIter1>::value_type v1;
   typedef typename iterator_traits<ForwardIter2>::value_type v2;
-  static_assert(std::is_same<v1, v2>::value,
-                "the type should be same in yastl::is_permutation");
-  return is_permutation_aux(first1, last1, first2, last2,
-                            yastl::equal_to<v1>());
+  static_assert(std::is_same<v1, v2>::value, "the type should be same in yastl::is_permutation");
+  return is_permutation_aux(first1, last1, first2, last2, yastl::equal_to<v1>());
 }
 
 /*****************************************************************************************/

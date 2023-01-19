@@ -205,7 +205,7 @@ struct ht_iterator : public ht_iterator_base<T, Hash, KeyEqual> {
   }
   // ++i 遍历同一个 bucket 上的下一个 hashnode，若为空就跳到下一个 bucket
   iterator& operator++() {
-    MYSTL_DEBUG(node != nullptr);
+    YASTL_DEBUG(node != nullptr);
     const node_ptr old = node;
     node = node->next;
     if (node == nullptr) { // 如果下一个位置为空，跳到下一个 bucket 的起始处
@@ -279,7 +279,7 @@ struct ht_const_iterator : public ht_iterator_base<T, Hash, KeyEqual> {
   }
 
   const_iterator& operator++() {
-    MYSTL_DEBUG(node != nullptr);
+    YASTL_DEBUG(node != nullptr);
     const node_ptr old = node;
     node = node->next;
     if (node == nullptr) { // 如果下一个位置为空，跳到下一个 bucket 的起始处
@@ -324,7 +324,7 @@ struct ht_local_iterator : public yastl::iterator<yastl::forward_iterator_tag, T
   }
   // ++it
   self& operator++() { // 只返回 node 的下一个值，不需判断是不是链的最后一个
-    MYSTL_DEBUG(node != nullptr);
+    YASTL_DEBUG(node != nullptr);
     node = node->next;
     return *this;
   }
@@ -371,7 +371,7 @@ struct ht_const_local_iterator : public yastl::iterator<yastl::forward_iterator_
   }
 
   self& operator++() { // 只返回 node 的下一个值，不需判断是不是链的最后一个
-    MYSTL_DEBUG(node != nullptr);
+    YASTL_DEBUG(node != nullptr);
     node = node->next;
     return *this;
   }
@@ -714,31 +714,31 @@ public:
   // bucket interface
   // 返回第 n 个桶的第一个 hashnode 的迭代器
   local_iterator begin(size_type n) noexcept {
-    MYSTL_DEBUG(n < size_);
+    YASTL_DEBUG(n < size_);
     return buckets_[n];
   }
   const_local_iterator begin(size_type n)  const noexcept {
-    MYSTL_DEBUG(n < size_);
+    YASTL_DEBUG(n < size_);
     return buckets_[n];
   }
   const_local_iterator cbegin(size_type n) const noexcept {
-    MYSTL_DEBUG(n < size_);
+    YASTL_DEBUG(n < size_);
     return buckets_[n];
   }
 
   // 返回 nullptr
   local_iterator end(size_type n) noexcept {
-    MYSTL_DEBUG(n < size_);
+    YASTL_DEBUG(n < size_);
     return nullptr;
   }
   // 返回 nullptr
   const_local_iterator end(size_type n) const noexcept {
-    MYSTL_DEBUG(n < size_);
+    YASTL_DEBUG(n < size_);
     return nullptr; 
   }
   // 返回 const nullptr
   const_local_iterator cend(size_type n) const noexcept {
-    MYSTL_DEBUG(n < size_);
+    YASTL_DEBUG(n < size_);
     return nullptr; 
   }
 
@@ -780,26 +780,31 @@ public:
     rehash(static_cast<size_type>((float)count / max_load_factor() + 0.5f)); // （不知道这数哪来的）
   }
 
-  hasher    hash_fcn() const { return hash_; }
-  key_equal key_eq()   const { return equal_; }
+  hasher hash_fcn() const {
+    return hash_;
+  }
+
+  key_equal key_eq() const {
+    return equal_;
+  }
 
 private:
   // hashtable 成员函数
 
   // init
-  void      init(size_type n);
-  void      copy_init(const hashtable& ht);
+  void init(size_type n);
+  void copy_init(const hashtable& ht);
 
   // node
-  template  <class ...Args>
-  node_ptr  create_node(Args&& ...args);
-  void      destroy_node(node_ptr n);
+  template <class ...Args>
+  node_ptr create_node(Args&& ...args);
+  void destroy_node(node_ptr n);
 
   // hash
   size_type next_size(size_type n) const;
   size_type hash(const key_type& key, size_type n) const;
   size_type hash(const key_type& key) const;
-  void      rehash_if_need(size_type n);
+  void rehash_if_need(size_type n);
 
   // insert
   template <class InputIter>
@@ -813,7 +818,7 @@ private:
 
   // insert node
   pair<iterator, bool> insert_node_unique(node_ptr np);
-  iterator             insert_node_multi(node_ptr np);
+  iterator insert_node_multi(node_ptr np);
 
   // bucket operator
   void replace_bucket(size_type bucket_count);
@@ -830,11 +835,8 @@ private:
 // 复制赋值运算符
 template <class T, class Hash, class KeyEqual>
 hashtable<T, Hash, KeyEqual>&
-hashtable<T, Hash, KeyEqual>::
-operator=(const hashtable& rhs)
-{
-  if (this != &rhs)
-  {
+hashtable<T, Hash, KeyEqual>::operator=(const hashtable& rhs) {
+  if (this != &rhs) {
     hashtable tmp(rhs);
     swap(tmp);
   }
@@ -844,9 +846,7 @@ operator=(const hashtable& rhs)
 // 移动赋值运算符
 template <class T, class Hash, class KeyEqual>
 hashtable<T, Hash, KeyEqual>&
-hashtable<T, Hash, KeyEqual>::
-operator=(hashtable&& rhs) noexcept
-{
+hashtable<T, Hash, KeyEqual>::operator=(hashtable&& rhs) noexcept {
   hashtable tmp(yastl::move(rhs));
   swap(tmp);
   return *this;
@@ -857,21 +857,17 @@ operator=(hashtable&& rhs) noexcept
 template <class T, class Hash, class KeyEqual>
 template <class ...Args>
 typename hashtable<T, Hash, KeyEqual>::iterator
-hashtable<T, Hash, KeyEqual>::
-emplace_multi(Args&& ...args)
-{
+hashtable<T, Hash, KeyEqual>::emplace_multi(Args&& ...args) {
   auto np = create_node(yastl::forward<Args>(args)...);
-  try
-  {
-    if ((float)(size_ + 1) > (float)bucket_size_ * max_load_factor())
+  try {
+    if ((float)(size_ + 1) > (float)bucket_size_ * max_load_factor()) { // 元素个数超过负载数
       rehash(size_ + 1);
-  }
-  catch (...)
-  {
+    }
+  } catch (...) {
     destroy_node(np);
     throw;
   }
-  return insert_node_multi(np);
+  return insert_node_multi(np); // 允许重复
 }
 
 // 就地构造元素，键值允许重复
@@ -879,42 +875,36 @@ emplace_multi(Args&& ...args)
 template <class T, class Hash, class KeyEqual>
 template <class ...Args>
 pair<typename hashtable<T, Hash, KeyEqual>::iterator, bool> 
-hashtable<T, Hash, KeyEqual>::
-emplace_unique(Args&& ...args)
-{
+hashtable<T, Hash, KeyEqual>::emplace_unique(Args&& ...args) {
   auto np = create_node(yastl::forward<Args>(args)...);
-  try
-  {
-    if ((float)(size_ + 1) > (float)bucket_size_ * max_load_factor())
+  try {
+    if ((float)(size_ + 1) > (float)bucket_size_ * max_load_factor()) {
       rehash(size_ + 1);
-  }
-  catch (...)
-  {
+    }
+  } catch (...) {
     destroy_node(np);
     throw;
   }
   return insert_node_unique(np);
 }
 
-// 在不需要重建表格的情况下插入新节点，键值不允许重复
+// 在不需要重建表格的情况下插入新节点，键值不允许重复，返回已有的迭代器或者插入的迭代器以及状态的 pair
 template <class T, class Hash, class KeyEqual>
 pair<typename hashtable<T, Hash, KeyEqual>::iterator, bool>
-hashtable<T, Hash, KeyEqual>::
-insert_unique_noresize(const value_type& value)
-{
+hashtable<T, Hash, KeyEqual>::insert_unique_noresize(const value_type& value) {
   const auto n = hash(value_traits::get_key(value));
   auto first = buckets_[n];
-  for (auto cur = first; cur; cur = cur->next)
-  {
-    if (is_equal(value_traits::get_key(cur->value), value_traits::get_key(value)))
-      return yastl::make_pair(iterator(cur, this), false);
+  for (auto cur = first; cur; cur = cur->next) {
+    if (is_equal(value_traits::get_key(cur->value), value_traits::get_key(value))) {
+      return yastl::make_pair(iterator(cur, this), false); // 如果已经存在，直接返回，并且状态标记为 false
+    }
   }
   // 让新节点成为链表的第一个节点
   auto tmp = create_node(value);  
-  tmp->next = first;
+  tmp->next = first; // 插入头部
   buckets_[n] = tmp;
   ++size_;
-  return yastl::make_pair(iterator(tmp, this), true);
+  return yastl::make_pair(iterator(tmp, this), true); // 不存在，插入，状态返回 true
 }
 
 // 在不需要重建表格的情况下插入新节点，键值允许重复，返回插入的 hashnode 的迭代器
@@ -942,34 +932,24 @@ hashtable<T, Hash, KeyEqual>::insert_multi_noresize(const value_type& value) {
 
 // 删除迭代器所指的节点
 template <class T, class Hash, class KeyEqual>
-void hashtable<T, Hash, KeyEqual>::
-erase(const_iterator position)
-{
+void hashtable<T, Hash, KeyEqual>::erase(const_iterator position) {
   auto p = position.node;
-  if (p)
-  {
+  if (p) {
     const auto n = hash(value_traits::get_key(p->value));
-    auto cur = buckets_[n];
-    if (cur == p)
-    { // p 位于链表头部
+    auto cur = buckets_[n]; // cur 为链表头部的 hashnode
+    if (cur == p) { // p 位于链表头部
       buckets_[n] = cur->next;
       destroy_node(cur);
       --size_;
-    }
-    else
-    {
+    } else {
       auto next = cur->next;
-      while (next)
-      {
-        if (next == p)
-        {
+      while (next) {
+        if (next == p) { // next 为要删除的节点
           cur->next = next->next;
           destroy_node(next);
           --size_;
           break;
-        }
-        else
-        {
+        } else { // 向后移动
           cur = next;
           next = cur->next;
         }
@@ -978,33 +958,28 @@ erase(const_iterator position)
   }
 }
 
-// 删除[first, last)内的节点
+// 删除 [first, last) 内的节点
 template <class T, class Hash, class KeyEqual>
-void hashtable<T, Hash, KeyEqual>::
-erase(const_iterator first, const_iterator last)
-{
-  if (first.node == last.node)
+void hashtable<T, Hash, KeyEqual>::erase(const_iterator first, const_iterator last) {
+  if (first.node == last.node) {
     return;
-  auto first_bucket = first.node 
+  }
+  auto first_bucket = first.node
     ? hash(value_traits::get_key(first.node->value)) 
     : bucket_size_;
   auto last_bucket = last.node 
     ? hash(value_traits::get_key(last.node->value))
     : bucket_size_;
-  if (first_bucket == last_bucket)
-  { // 如果在 bucket 在同一个位置
+  if (first_bucket == last_bucket) { // 如果在 bucket 在同一个位置, 迭代器在同一条链上
     erase_bucket(first_bucket, first.node, last.node);
-  }
-  else
-  {
-    erase_bucket(first_bucket, first.node, nullptr);
-    for (auto n = first_bucket + 1; n < last_bucket; ++n)
-    {
-      if(buckets_[n] != nullptr)
+  } else { // 迭代器跨了几个 bucket
+    erase_bucket(first_bucket, first.node, nullptr); // 将 first bucket 链表全部删除
+    for (auto n = first_bucket + 1; n < last_bucket; ++n) { // 清空 (first, last) 所有 bucket 的链表
+      if (buckets_[n] != nullptr) {
         erase_bucket(n, nullptr);
+      }
     }
-    if (last_bucket != bucket_size_)
-    {
+    if (last_bucket != bucket_size_) { // 清空 last 的 bucket 中 直到 last.node 的链表
       erase_bucket(last_bucket, last.node);
     }
   }
@@ -1022,29 +997,22 @@ hashtable<T, Hash, KeyEqual>::erase_multi(const key_type& key) {
   return 0;
 }
 
+// 删除 key 所在 node (存在唯一)，返回删除个数(size_type)
 template <class T, class Hash, class KeyEqual>
 typename hashtable<T, Hash, KeyEqual>::size_type
-hashtable<T, Hash, KeyEqual>::
-erase_unique(const key_type& key)
-{
+hashtable<T, Hash, KeyEqual>::erase_unique(const key_type& key) {
   const auto n = hash(key);
   auto first = buckets_[n];
-  if (first)
-  {
-    if (is_equal(value_traits::get_key(first->value), key))
-    {
+  if (first) { // 链表首节点
+    if (is_equal(value_traits::get_key(first->value), key)) { // 是第一个，删除并改变头节点
       buckets_[n] = first->next;
       destroy_node(first);
       --size_;
       return 1;
-    }
-    else
-    {
+    } else {
       auto next = first->next;
-      while (next)
-      {
-        if (is_equal(value_traits::get_key(next->value), key))
-        {
+      while (next) { // 遍历找到并删除
+        if (is_equal(value_traits::get_key(next->value), key)) {
           first->next = next->next;
           destroy_node(next);
           --size_;
@@ -1060,16 +1028,11 @@ erase_unique(const key_type& key)
 
 // 清空 hashtable
 template <class T, class Hash, class KeyEqual>
-void hashtable<T, Hash, KeyEqual>::
-clear()
-{
-  if (size_ != 0)
-  {
-    for (size_type i = 0; i < bucket_size_; ++i)
-    {
+void hashtable<T, Hash, KeyEqual>::clear() {
+  if (size_ != 0) {
+    for (size_type i = 0; i < bucket_size_; ++i) { // 遍历每个 bucket
       node_ptr cur = buckets_[i];
-      while (cur != nullptr)
-      {
+      while (cur != nullptr) { // 清空每个 bucket 的 node
         node_ptr next = cur->next;
         destroy_node(cur);
         cur = next;
@@ -1083,25 +1046,22 @@ clear()
 // 在某个 bucket 节点的个数
 template <class T, class Hash, class KeyEqual>
 typename hashtable<T, Hash, KeyEqual>::size_type
-hashtable<T, Hash, KeyEqual>::
-bucket_size(size_type n) const noexcept
-{
+hashtable<T, Hash, KeyEqual>::bucket_size(size_type n) const noexcept {
   size_type result = 0;
-  for (auto cur = buckets_[n]; cur; cur = cur->next)
-  {
+  for (auto cur = buckets_[n]; cur; cur = cur->next) { // 遍历第 n 个 bucket 的每个链表，数个数
     ++result;
   }
   return result;
 }
 
-// 重新对元素进行一遍哈希，插入到新的位置。count 为希望的哈希表大小
+// 重新对元素进行一遍哈希，插入到新的位置。count 为元素个数
 template <class T, class Hash, class KeyEqual>
 void hashtable<T, Hash, KeyEqual>::rehash(size_type count) {
-  auto n = ht_next_prime(count); // >=count 的最小质数
+  auto n = ht_next_prime(count); // >=元素个数的最小质数
   if (n > bucket_size_) { // 比现有的大小大
     replace_bucket(n);
   } else { // 比现有大小小
-    if (((float)size_ / (float)n < max_load_factor() - 0.25f) &&  // 调整后最大负载系数比现在还低 0.25 并且（不知这数哪来的）
+    if (((float)size_ / (float)n < max_load_factor() - 0.25f) &&  // 调整后最大负载系数比现在还低 0.25 并且
         ((float)n < (float)bucket_size_ * 0.75)) { // 新的大小比现有大小的 3/4 还小才值得重新调整
       replace_bucket(n);
     }
@@ -1111,22 +1071,20 @@ void hashtable<T, Hash, KeyEqual>::rehash(size_type count) {
 // 查找键值为 key 的节点，返回其迭代器
 template <class T, class Hash, class KeyEqual>
 typename hashtable<T, Hash, KeyEqual>::iterator
-hashtable<T, Hash, KeyEqual>::
-find(const key_type& key)
-{
+hashtable<T, Hash, KeyEqual>::find(const key_type& key) {
   const auto n = hash(key);
   node_ptr first = buckets_[n];
+  // 依次遍历
   for (; first && !is_equal(value_traits::get_key(first->value), key); first = first->next) {}
   return iterator(first, this);
 }
 
 template <class T, class Hash, class KeyEqual>
 typename hashtable<T, Hash, KeyEqual>::const_iterator
-hashtable<T, Hash, KeyEqual>::
-find(const key_type& key) const
-{
+hashtable<T, Hash, KeyEqual>::find(const key_type& key) const {
   const auto n = hash(key);
   node_ptr first = buckets_[n];
+  // 依次遍历
   for (; first && !is_equal(value_traits::get_key(first->value), key); first = first->next) {}
   return M_cit(first);
 }
@@ -1134,67 +1092,56 @@ find(const key_type& key) const
 // 查找键值为 key 出现的次数
 template <class T, class Hash, class KeyEqual>
 typename hashtable<T, Hash, KeyEqual>::size_type
-hashtable<T, Hash, KeyEqual>::
-count(const key_type& key) const
-{
+hashtable<T, Hash, KeyEqual>::count(const key_type& key) const {
   const auto n = hash(key);
   size_type result = 0;
-  for (node_ptr cur = buckets_[n]; cur; cur = cur->next)
-  {
-    if (is_equal(value_traits::get_key(cur->value), key))
+  for (node_ptr cur = buckets_[n]; cur; cur = cur->next) { // 相同 key 必定出现在同一条链上
+    if (is_equal(value_traits::get_key(cur->value), key)) {
       ++result;
+    }
   }
   return result;
 }
 
-// 查找与键值 key 相等的区间，返回一个 pair，指向相等区间的首尾
+// 查找与键值 key 相等的区间，返回一个 pair，指向相等区间的首尾 [first, second)
 template <class T, class Hash, class KeyEqual>
-pair<typename hashtable<T, Hash, KeyEqual>::iterator,
-  typename hashtable<T, Hash, KeyEqual>::iterator>
-hashtable<T, Hash, KeyEqual>::
-equal_range_multi(const key_type& key)
-{
-  const auto n = hash(key);
-  for (node_ptr first = buckets_[n]; first; first = first->next)
-  {
-    if (is_equal(value_traits::get_key(first->value), key))
-    { // 如果出现相等的键值
-      for (node_ptr second = first->next; second; second = second->next)
-      {
-        if (!is_equal(value_traits::get_key(second->value), key))
+pair<typename hashtable<T, Hash, KeyEqual>::iterator, typename hashtable<T, Hash, KeyEqual>::iterator>
+hashtable<T, Hash, KeyEqual>::equal_range_multi(const key_type& key) {
+  const auto n = hash(key); // 找到 bucket 编号
+  for (node_ptr first = buckets_[n]; first; first = first->next) { // 遍历 n 号 bucket
+    if (is_equal(value_traits::get_key(first->value), key)) { // 如果出现相等的键值，记为 first
+      for (node_ptr second = first->next; second; second = second->next) { // 尝试找到第二个相等的键值 second
+        if (!is_equal(value_traits::get_key(second->value), key)) { // 找到第一个不等的，在他之前都相等
           return yastl::make_pair(iterator(first, this), iterator(second, this));
+        }
       }
-      for (auto m = n + 1; m < bucket_size_; ++m)
-      { // 整个链表都相等，查找下一个链表出现的位置
-        if (buckets_[m])
+      for (auto m = n + 1; m < bucket_size_; ++m) { // 整个链表都相等，查找下一个链表出现的位置
+        if (buckets_[m]) {
           return yastl::make_pair(iterator(first, this), iterator(buckets_[m], this));
+        }
       }
-      return yastl::make_pair(iterator(first, this), end());
+      return yastl::make_pair(iterator(first, this), end()); // 下一个链表不存在
     }
   }
-  return yastl::make_pair(end(), end());
+  return yastl::make_pair(end(), end()); // 根本就不存在 key
 }
 
+// 查找与键值 key 相等的区间，返回一个 pair，指向相等区间的首尾 [first, second)
 template <class T, class Hash, class KeyEqual>
-pair<typename hashtable<T, Hash, KeyEqual>::const_iterator,
-  typename hashtable<T, Hash, KeyEqual>::const_iterator>
-hashtable<T, Hash, KeyEqual>::
-equal_range_multi(const key_type& key) const
-{
+pair<typename hashtable<T, Hash, KeyEqual>::const_iterator, typename hashtable<T, Hash, KeyEqual>::const_iterator>
+hashtable<T, Hash, KeyEqual>::equal_range_multi(const key_type& key) const {
   const auto n = hash(key);
-  for (node_ptr first = buckets_[n]; first; first = first->next)
-  {
-    if (is_equal(value_traits::get_key(first->value), key))
-    {
-      for (node_ptr second = first->next; second; second = second->next)
-      {
-        if (!is_equal(value_traits::get_key(second->value), key))
+  for (node_ptr first = buckets_[n]; first; first = first->next) {
+    if (is_equal(value_traits::get_key(first->value), key)) {
+      for (node_ptr second = first->next; second; second = second->next) {
+        if (!is_equal(value_traits::get_key(second->value), key)) {
           return yastl::make_pair(M_cit(first), M_cit(second));
+        }
       }
-      for (auto m = n + 1; m < bucket_size_; ++m)
-      { // 整个链表都相等，查找下一个链表出现的位置
-        if (buckets_[m])
+      for (auto m = n + 1; m < bucket_size_; ++m) { // 整个链表都相等，查找下一个链表出现的位置
+        if (buckets_[m]) {
           return yastl::make_pair(M_cit(first), M_cit(buckets_[m]));
+        }
       }
       return yastl::make_pair(M_cit(first), cend());
     }
@@ -1202,47 +1149,42 @@ equal_range_multi(const key_type& key) const
   return yastl::make_pair(cend(), cend());
 }
 
+// 查找与键值 key 相等(唯一)的区间，返回一个 pair，指向相等区间的首尾 [first, second)
 template <class T, class Hash, class KeyEqual>
-pair<typename hashtable<T, Hash, KeyEqual>::iterator,
-  typename hashtable<T, Hash, KeyEqual>::iterator>
-hashtable<T, Hash, KeyEqual>::
-equal_range_unique(const key_type& key)
-{
+pair<typename hashtable<T, Hash, KeyEqual>::iterator, typename hashtable<T, Hash, KeyEqual>::iterator>
+hashtable<T, Hash, KeyEqual>::equal_range_unique(const key_type& key) {
   const auto n = hash(key);
-  for (node_ptr first = buckets_[n]; first; first = first->next)
-  {
-    if (is_equal(value_traits::get_key(first->value), key))
-    {
-      if (first->next)
+  for (node_ptr first = buckets_[n]; first; first = first->next) { // 遍历对应 bucket 的链
+    if (is_equal(value_traits::get_key(first->value), key)) { // 找到了
+      if (first->next) { // 下一个 node 不为空
         return yastl::make_pair(iterator(first, this), iterator(first->next, this));
-      for (auto m = n + 1; m < bucket_size_; ++m)
-      { // 整个链表都相等，查找下一个链表出现的位置
-        if (buckets_[m])
-          return yastl::make_pair(iterator(first, this), iterator(buckets_[m], this));
       }
-      return yastl::make_pair(iterator(first, this), end());
+      for (auto m = n + 1; m < bucket_size_; ++m) { // 整个链表都相等，查找下一个链表出现的位置
+        if (buckets_[m]) {
+          return yastl::make_pair(iterator(first, this), iterator(buckets_[m], this)); // 有下一个链表
+        }
+      }
+      return yastl::make_pair(iterator(first, this), end()); // key 所在链表为最后一个链表
     }
   }
-  return yastl::make_pair(end(), end());
+  return yastl::make_pair(end(), end()); // 根本没有 key
 }
 
+// 查找与键值 key 相等(唯一)的区间，返回一个 pair，指向相等区间的首尾 [first, second)
 template <class T, class Hash, class KeyEqual>
 pair<typename hashtable<T, Hash, KeyEqual>::const_iterator,
   typename hashtable<T, Hash, KeyEqual>::const_iterator>
-hashtable<T, Hash, KeyEqual>::
-equal_range_unique(const key_type& key) const
-{
+hashtable<T, Hash, KeyEqual>::equal_range_unique(const key_type& key) const {
   const auto n = hash(key);
-  for (node_ptr first = buckets_[n]; first; first = first->next)
-  {
-    if (is_equal(value_traits::get_key(first->value), key))
-    {
-      if (first->next)
+  for (node_ptr first = buckets_[n]; first; first = first->next) {
+    if (is_equal(value_traits::get_key(first->value), key)) {
+      if (first->next) {
         return yastl::make_pair(M_cit(first), M_cit(first->next));
-      for (auto m = n + 1; m < bucket_size_; ++m)
-      { // 整个链表都相等，查找下一个链表出现的位置
-        if (buckets_[m])
+      }
+      for (auto m = n + 1; m < bucket_size_; ++m) { // 整个链表都相等，查找下一个链表出现的位置
+        if (buckets_[m]) {
           return yastl::make_pair(M_cit(first), M_cit(buckets_[m]));
+        }
       }
       return yastl::make_pair(M_cit(first), cend());
     }
@@ -1252,11 +1194,8 @@ equal_range_unique(const key_type& key) const
 
 // 交换 hashtable
 template <class T, class Hash, class KeyEqual>
-void hashtable<T, Hash, KeyEqual>::
-swap(hashtable& rhs) noexcept
-{
-  if (this != &rhs)
-  {
+void hashtable<T, Hash, KeyEqual>::swap(hashtable& rhs) noexcept {
+  if (this != &rhs) {
     buckets_.swap(rhs.buckets_);
     yastl::swap(bucket_size_, rhs.bucket_size_);
     yastl::swap(size_, rhs.size_);
@@ -1327,21 +1266,18 @@ hashtable<T, Hash, KeyEqual>::create_node(Args&& ...args) {
   return tmp;
 }
 
-// destroy_node 函数
+// destroy_node 函数， 调用析构函数并且释放节点内存
 template <class T, class Hash, class KeyEqual>
-void hashtable<T, Hash, KeyEqual>::
-destroy_node(node_ptr node)
-{
+void hashtable<T, Hash, KeyEqual>::destroy_node(node_ptr node) {
   data_allocator::destroy(yastl::address_of(node->value));
   node_allocator::deallocate(node);
   node = nullptr;
 }
 
-// next_size 函数
+// next_size 函数，返回 >= n 的下一个合适质数大小作为新的 bucket_size 用
 template <class T, class Hash, class KeyEqual>
 typename hashtable<T, Hash, KeyEqual>::size_type
-hashtable<T, Hash, KeyEqual>::next_size(size_type n) const
-{
+hashtable<T, Hash, KeyEqual>::next_size(size_type n) const {
   return ht_next_prime(n);
 }
 
@@ -1370,7 +1306,7 @@ void hashtable<T, Hash, KeyEqual>::rehash_if_need(size_type n) {
 template <class T, class Hash, class KeyEqual>
 template <class InputIter>
 void hashtable<T, Hash, KeyEqual>::copy_insert_multi(InputIter first, InputIter last, yastl::input_iterator_tag) {
-  rehash_if_need(yastl::distance(first, last)); // 插入总元素
+  rehash_if_need(yastl::distance(first, last)); // 插入总元素个数
   for (; first != last; ++first) {
     insert_multi_noresize(*first);
   }
@@ -1379,60 +1315,55 @@ void hashtable<T, Hash, KeyEqual>::copy_insert_multi(InputIter first, InputIter 
 template <class T, class Hash, class KeyEqual>
 template <class ForwardIter>
 void hashtable<T, Hash, KeyEqual>::
-copy_insert_multi(ForwardIter first, ForwardIter last, yastl::forward_iterator_tag)
-{
+copy_insert_multi(ForwardIter first, ForwardIter last, yastl::forward_iterator_tag) {
   size_type n = yastl::distance(first, last);
   rehash_if_need(n);
-  for (; n > 0; --n, ++first)
+  for (; n > 0; --n, ++first) {
     insert_multi_noresize(*first);
+  }
 }
 
 template <class T, class Hash, class KeyEqual>
 template <class InputIter>
 void hashtable<T, Hash, KeyEqual>::
-copy_insert_unique(InputIter first, InputIter last, yastl::input_iterator_tag)
-{
+copy_insert_unique(InputIter first, InputIter last, yastl::input_iterator_tag) {
   rehash_if_need(yastl::distance(first, last));
-  for (; first != last; ++first)
+  for (; first != last; ++first) {
     insert_unique_noresize(*first);
+  }
 }
 
 template <class T, class Hash, class KeyEqual>
 template <class ForwardIter>
 void hashtable<T, Hash, KeyEqual>::
-copy_insert_unique(ForwardIter first, ForwardIter last, yastl::forward_iterator_tag)
-{
+copy_insert_unique(ForwardIter first, ForwardIter last, yastl::forward_iterator_tag) {
   size_type n = yastl::distance(first, last);
   rehash_if_need(n);
-  for (; n > 0; --n, ++first)
+  for (; n > 0; --n, ++first) {
     insert_unique_noresize(*first);
+  }
 }
 
-// insert_node 函数
+// insert_node 函数 返回插入的迭代器
 template <class T, class Hash, class KeyEqual>
 typename hashtable<T, Hash, KeyEqual>::iterator
-hashtable<T, Hash, KeyEqual>::
-insert_node_multi(node_ptr np)
-{
+hashtable<T, Hash, KeyEqual>::insert_node_multi(node_ptr np) {
   const auto n = hash(value_traits::get_key(np->value));
   auto cur = buckets_[n];
-  if (cur == nullptr)
-  {
+  if (cur == nullptr) { // 还是空的 放在头部
     buckets_[n] = np;
     ++size_;
     return iterator(np, this);
   }
-  for (; cur; cur = cur->next)
-  {
-    if (is_equal(value_traits::get_key(cur->value), value_traits::get_key(np->value)))
-    {
+  for (; cur; cur = cur->next) {
+    if (is_equal(value_traits::get_key(cur->value), value_traits::get_key(np->value))) { // 相等插在后面
       np->next = cur->next;
       cur->next = np;
       ++size_;
       return iterator(np, this);
     }
   }
-  np->next = buckets_[n];
+  np->next = buckets_[n]; // 插在头部
   buckets_[n] = np;
   ++size_;
   return iterator(np, this);
@@ -1441,25 +1372,20 @@ insert_node_multi(node_ptr np)
 // insert_node_unique 函数
 template <class T, class Hash, class KeyEqual>
 pair<typename hashtable<T, Hash, KeyEqual>::iterator, bool>
-hashtable<T, Hash, KeyEqual>::
-insert_node_unique(node_ptr np)
-{
+hashtable<T, Hash, KeyEqual>::insert_node_unique(node_ptr np) {
   const auto n = hash(value_traits::get_key(np->value));
   auto cur = buckets_[n];
-  if (cur == nullptr)
-  {
+  if (cur == nullptr) { // bucket 为空，直接插
     buckets_[n] = np;
     ++size_;
     return yastl::make_pair(iterator(np, this), true);
   }
-  for (; cur; cur = cur->next)
-  {
-    if (is_equal(value_traits::get_key(cur->value), value_traits::get_key(np->value)))
-    {
+  for (; cur; cur = cur->next) { // 遍历，已经存在的话返回失败
+    if (is_equal(value_traits::get_key(cur->value), value_traits::get_key(np->value))) {
       return yastl::make_pair(iterator(cur, this), false);
     }
   }
-  np->next = buckets_[n];
+  np->next = buckets_[n]; // 插入头部 返回成功
   buckets_[n] = np;
   ++size_;
   return yastl::make_pair(iterator(np, this), true);
@@ -1498,21 +1424,15 @@ void hashtable<T, Hash, KeyEqual>::replace_bucket(size_type bucket_count) {
 // erase_bucket 函数
 // 在第 n 个 bucket 内，删除 [first, last) 的节点
 template <class T, class Hash, class KeyEqual>
-void hashtable<T, Hash, KeyEqual>::
-erase_bucket(size_type n, node_ptr first, node_ptr last)
-{
+void hashtable<T, Hash, KeyEqual>::erase_bucket(size_type n, node_ptr first, node_ptr last) {
   auto cur = buckets_[n];
-  if (cur == first)
-  {
+  if (cur == first) { // 清空
     erase_bucket(n, last);
-  }
-  else
-  {
+  } else {
     node_ptr next = cur->next;
-    for (; next != first; cur = next, next = cur->next) {}
-    while (next != last)
-    {
-      cur->next = next->next;
+    for (; next != first; cur = next, next = cur->next) {} // 遍历直到 cur->next == first
+    while (next != last) {
+      cur->next = next->next; // 依次删除
       destroy_node(next);
       next = cur->next;
       --size_;
@@ -1523,12 +1443,9 @@ erase_bucket(size_type n, node_ptr first, node_ptr last)
 // erase_bucket 函数
 // 在第 n 个 bucket 内，删除 [buckets_[n], last) 的节点
 template <class T, class Hash, class KeyEqual>
-void hashtable<T, Hash, KeyEqual>::
-erase_bucket(size_type n, node_ptr last)
-{
+void hashtable<T, Hash, KeyEqual>::erase_bucket(size_type n, node_ptr last) {
   auto cur = buckets_[n];
-  while (cur != last)
-  {
+  while (cur != last) {
     auto next = cur->next;
     destroy_node(cur);
     cur = next;
@@ -1538,42 +1455,42 @@ erase_bucket(size_type n, node_ptr last)
 }
 
 // equal_to 函数
+// 这函数写的有问题 跑不了
 template <class T, class Hash, class KeyEqual>
-bool hashtable<T, Hash, KeyEqual>::equal_to_multi(const hashtable& other)
-{
-  if (size_ != other.size_)
+bool hashtable<T, Hash, KeyEqual>::equal_to_multi(const hashtable& other) {
+  if (size_ != other.size_) {
     return false;
-  for (auto f = begin(), l = end(); f != l;)
-  {
-    auto p1 = equal_range_multi(value_traits::get_key(*f));
+  }
+  for (auto f = begin(), l = end(); f != l;) {
+    auto p1 = equal_range_multi(value_traits::get_key(*f)); // 找到相等值的区间
     auto p2 = other.equal_range_multi(value_traits::get_key(*f));
-    if (yastl::distance(p1.first, p1.last) != yastl::distance(p2.first, p2.last) ||
-        !yastl::is_permutation(p1.first, p2.last, p2.first, p2.last))
+    if (yastl::distance(p1.last, p1.last) != yastl::distance(p2.first, p2.last) ||
+        !yastl::is_permutation(p1.first, p2.last, p2.first, p2.last)) { // 比较个数 以及 数值相等  这里是不写错了
       return false;
+    }
     f = p1.last;
   }
   return true;
 }
 
+// 不允许重复的哈希表中 判断相等
 template <class T, class Hash, class KeyEqual>
-bool hashtable<T, Hash, KeyEqual>::equal_to_unique(const hashtable& other)
-{
-  if (size_ != other.size_)
+bool hashtable<T, Hash, KeyEqual>::equal_to_unique(const hashtable& other) {
+  if (size_ != other.size_) { // 大小相等，否则 是 other 的子集下面也会返回 true
     return false;
-  for (auto f = begin(), l = end(); f != l; ++f)
-  {
+  }
+  for (auto f = begin(), l = end(); f != l; ++f) {
     auto res = other.find(value_traits::get_key(*f));
-    if (res.node == nullptr || *res != *f)
+    if (res.node == nullptr || *res != *f) { // 只要某个元素在表里都有就可以
       return false;
+    }
   }
   return true;
 }
 
 // 重载 yastl 的 swap
 template <class T, class Hash, class KeyEqual>
-void swap(hashtable<T, Hash, KeyEqual>& lhs,
-          hashtable<T, Hash, KeyEqual>& rhs) noexcept
-{
+void swap(hashtable<T, Hash, KeyEqual>& lhs, hashtable<T, Hash, KeyEqual>& rhs) noexcept {
   lhs.swap(rhs);
 }
 
