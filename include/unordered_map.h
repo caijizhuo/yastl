@@ -14,15 +14,13 @@
 
 #include "hashtable.h"
 
-namespace yastl
-{
+namespace yastl {
 
 // 模板类 unordered_map，键值不允许重复
 // 参数一代表键值类型，参数二代表实值类型，参数三代表哈希函数，缺省使用 yastl::hash
 // 参数四代表键值比较方式，缺省使用 yastl::equal_to
 template <class Key, class T, class Hash = yastl::hash<Key>, class KeyEqual = yastl::equal_to<Key>>
-class unordered_map
-{
+class unordered_map {
 private:
   // 使用 hashtable 作为底层机制
   typedef hashtable<yastl::pair<const Key, T>, Hash, KeyEqual> base_type;
@@ -31,89 +29,79 @@ private:
 public:
   // 使用 hashtable 的型别  
 
-  typedef typename base_type::allocator_type       allocator_type;
-  typedef typename base_type::key_type             key_type;
-  typedef typename base_type::mapped_type          mapped_type;
-  typedef typename base_type::value_type           value_type;
-  typedef typename base_type::hasher               hasher;
-  typedef typename base_type::key_equal            key_equal;
+  typedef typename base_type::allocator_type allocator_type;
+  typedef typename base_type::key_type key_type;
+  typedef typename base_type::mapped_type mapped_type;
+  typedef typename base_type::value_type value_type;
+  typedef typename base_type::hasher hasher;
+  typedef typename base_type::key_equal key_equal;
 
-  typedef typename base_type::size_type            size_type;
-  typedef typename base_type::difference_type      difference_type;
-  typedef typename base_type::pointer              pointer;
-  typedef typename base_type::const_pointer        const_pointer;
-  typedef typename base_type::reference            reference;
-  typedef typename base_type::const_reference      const_reference;
+  typedef typename base_type::size_type size_type;
+  typedef typename base_type::difference_type difference_type;
+  typedef typename base_type::pointer pointer;
+  typedef typename base_type::const_pointer const_pointer;
+  typedef typename base_type::reference reference;
+  typedef typename base_type::const_reference const_reference;
 
-  typedef typename base_type::iterator             iterator;
-  typedef typename base_type::const_iterator       const_iterator;
-  typedef typename base_type::local_iterator       local_iterator;
+  typedef typename base_type::iterator iterator;
+  typedef typename base_type::const_iterator const_iterator;
+  typedef typename base_type::local_iterator local_iterator;
   typedef typename base_type::const_local_iterator const_local_iterator;
 
-  allocator_type get_allocator() const { return ht_.get_allocator(); }
+  allocator_type get_allocator() const {
+    return ht_.get_allocator();
+  }
 
 public:
   // 构造、复制、移动、析构函数
 
-  unordered_map()
-    :ht_(100, Hash(), KeyEqual())
-  {
-  }
+  unordered_map() : ht_(100, Hash(), KeyEqual()) {}
 
   explicit unordered_map(size_type bucket_count,
                          const Hash& hash = Hash(),
-                         const KeyEqual& equal = KeyEqual())
-    :ht_(bucket_count, hash, equal)
-  {
-  }
+                         const KeyEqual& equal = KeyEqual()) : ht_(bucket_count, hash, equal) {}
 
   template <class InputIterator>
   unordered_map(InputIterator first, InputIterator last,
                 const size_type bucket_count = 100,
                 const Hash& hash = Hash(),
                 const KeyEqual& equal = KeyEqual())
-    : ht_(yastl::max(bucket_count, static_cast<size_type>(yastl::distance(first, last))), hash, equal)
-  {
-    for (; first != last; ++first)
+    : ht_(yastl::max(bucket_count, static_cast<size_type>(yastl::distance(first, last))), hash, equal) {
+    for (; first != last; ++first) {
       ht_.insert_unique_noresize(*first);
+    }
   }
 
   unordered_map(std::initializer_list<value_type> ilist,
                 const size_type bucket_count = 100,
                 const Hash& hash = Hash(),
                 const KeyEqual& equal = KeyEqual())
-    :ht_(yastl::max(bucket_count, static_cast<size_type>(ilist.size())), hash, equal)
-  {
-    for (auto first = ilist.begin(), last = ilist.end(); first != last; ++first)
+                : ht_(yastl::max(bucket_count, static_cast<size_type>(ilist.size())), hash, equal) {
+    for (auto first = ilist.begin(), last = ilist.end(); first != last; ++first) {
       ht_.insert_unique_noresize(*first);
+    }
   }
 
   unordered_map(const unordered_map& rhs) 
-    :ht_(rhs.ht_) 
-  {
-  }
+    : ht_(rhs.ht_) {}
   unordered_map(unordered_map&& rhs) noexcept
-    :ht_(yastl::move(rhs.ht_)) 
-  {
-  }
+    : ht_(yastl::move(rhs.ht_)) {}
 
-  unordered_map& operator=(const unordered_map& rhs) 
-  { 
+  unordered_map& operator=(const unordered_map& rhs) { 
     ht_ = rhs.ht_;
-    return *this; 
+    return *this;
   }
-  unordered_map& operator=(unordered_map&& rhs) 
-  { 
+  unordered_map& operator=(unordered_map&& rhs) {
     ht_ = yastl::move(rhs.ht_);
     return *this;
   }
 
-  unordered_map& operator=(std::initializer_list<value_type> ilist)
-  {
+  unordered_map& operator=(std::initializer_list<value_type> ilist) {
     ht_.clear();
     ht_.reserve(ilist.size());
-    for (auto first = ilist.begin(), last = ilist.end(); first != last; ++first)
+    for (auto first = ilist.begin(), last = ilist.end(); first != last; ++first) {
       ht_.insert_unique_noresize(*first);
+    }
     return *this;
   }
 
@@ -121,97 +109,120 @@ public:
 
   // 迭代器相关
 
-  iterator       begin()        noexcept
-  { return ht_.begin(); }
-  const_iterator begin()  const noexcept
-  { return ht_.begin(); }
-  iterator       end()          noexcept
-  { return ht_.end(); }
-  const_iterator end()    const noexcept
-  { return ht_.end(); }
+  iterator begin() noexcept {
+    return ht_.begin();
+  }
+  const_iterator begin() const noexcept {
+    return ht_.begin();
+  }
+  iterator end() noexcept {
+    return ht_.end();
+  }
+  const_iterator end() const noexcept {
+    return ht_.end();
+  }
 
-  const_iterator cbegin() const noexcept
-  { return ht_.cbegin(); }
-  const_iterator cend()   const noexcept
-  { return ht_.cend(); }
+  const_iterator cbegin() const noexcept {
+    return ht_.cbegin();
+  }
+  const_iterator cend() const noexcept {
+    return ht_.cend();
+  }
 
   // 容量相关
 
-  bool      empty()    const noexcept { return ht_.empty(); }
-  size_type size()     const noexcept { return ht_.size(); }
-  size_type max_size() const noexcept { return ht_.max_size(); }
+  bool empty() const noexcept {
+    return ht_.empty();
+  }
+  size_type size() const noexcept {
+    return ht_.size();
+  }
+  size_type max_size() const noexcept {
+    return ht_.max_size();
+  }
 
   // 修改容器操作
 
   // empalce / empalce_hint
 
   template <class ...Args>
-  pair<iterator, bool> emplace(Args&& ...args)
-  { return ht_.emplace_unique(yastl::forward<Args>(args)...); }
+  pair<iterator, bool> emplace(Args&& ...args) {
+    return ht_.emplace_unique(yastl::forward<Args>(args)...);
+  }
 
   template <class ...Args>
-  iterator emplace_hint(const_iterator hint, Args&& ...args)
-  { return ht_.emplace_unique_use_hint(hint, yastl::forward<Args>(args)...); }
+  iterator emplace_hint(const_iterator hint, Args&& ...args) {
+    return ht_.emplace_unique_use_hint(hint, yastl::forward<Args>(args)...);
+  }
 
   // insert
 
-  pair<iterator, bool> insert(const value_type& value)
-  { return ht_.insert_unique(value); }
-  pair<iterator, bool> insert(value_type&& value)
-  { return ht_.emplace_unique(yastl::move(value)); }
+  pair<iterator, bool> insert(const value_type& value) {
+    return ht_.insert_unique(value);
+  }
+  pair<iterator, bool> insert(value_type&& value) {
+    return ht_.emplace_unique(yastl::move(value));
+  }
 
-  iterator insert(const_iterator hint, const value_type& value)
-  { return ht_.insert_unique_use_hint(hint, value); }
-  iterator insert(const_iterator hint, value_type&& value)
-  { return ht_.emplace_unique_use_hint(hint, yastl::move(value)); }
+  iterator insert(const_iterator hint, const value_type& value) {
+    return ht_.insert_unique_use_hint(hint, value);
+  }
+  iterator insert(const_iterator hint, value_type&& value) {
+    return ht_.emplace_unique_use_hint(hint, yastl::move(value));
+  }
 
   template <class InputIterator>
-  void insert(InputIterator first, InputIterator last)
-  { ht_.insert_unique(first, last); }
+  void insert(InputIterator first, InputIterator last) {
+    ht_.insert_unique(first, last);
+  }
 
   // erase / clear
 
-  void      erase(iterator it)
-  { ht_.erase(it); }
-  void      erase(iterator first, iterator last)
-  { ht_.erase(first, last); }
+  void erase(iterator it) {
+    ht_.erase(it);
+  }
+  void erase(iterator first, iterator last) {
+    ht_.erase(first, last);
+  }
 
-  size_type erase(const key_type& key)
-  { return ht_.erase_unique(key); }
+  size_type erase(const key_type& key) {
+    return ht_.erase_unique(key);
+  }
 
-  void      clear()
-  { ht_.clear(); }
+  void clear() {
+    ht_.clear();
+  }
 
-  void      swap(unordered_map& other) noexcept
-  { ht_.swap(other.ht_); }
+  void swap(unordered_map& other) noexcept {
+    ht_.swap(other.ht_);
+  }
 
   // 查找相关
 
-  mapped_type& at(const key_type& key)
-  {
+  mapped_type& at(const key_type& key) {
     iterator it = ht_.find(key);
     THROW_OUT_OF_RANGE_IF(it.node == nullptr, "unordered_map<Key, T> no such element exists");
     return it->second;
   }
-  const mapped_type& at(const key_type& key) const
-  {
+  const mapped_type& at(const key_type& key) const {
     iterator it = ht_.find(key);
     THROW_OUT_OF_RANGE_IF(it.node == nullptr, "unordered_map<Key, T> no such element exists");
     return it->second;
   }
 
-  mapped_type& operator[](const key_type& key)
-  {
+  // 构造一个空的 返回 insert 成功与否
+  mapped_type& operator[](const key_type& key) {
     iterator it = ht_.find(key);
-    if (it.node == nullptr)
+    if (it.node == nullptr) {
       it = ht_.emplace_unique(key, T{}).first;
+    }
     return it->second;
   }
-  mapped_type& operator[](key_type&& key)
-  {
+  mapped_type& operator[](key_type&& key) {
     iterator it = ht_.find(key);
-    if (it.node == nullptr)
+    if (it.node == nullptr) {
       it = ht_.emplace_unique(yastl::move(key), T{}).first;
+    }
     return it->second;
   }
 
