@@ -47,8 +47,8 @@ struct hashtable_node {
 template <class T, bool>
 struct ht_value_traits_imp {
   typedef T key_type;
-  typedef T mapped_type;
-  typedef T value_type;
+  typedef T mapped_type; // 不用键值对，数据类型都为 T
+  typedef T value_type; // 不用键值对，数据类型都为 T
 
   template <class Ty>
   static const key_type& get_key(const Ty& value) {
@@ -64,8 +64,8 @@ struct ht_value_traits_imp {
 // 给 unordered_map 用的，元素是键值对
 template <class T>
 struct ht_value_traits_imp<T, true> {
-  typedef typename std::remove_cv<typename T::first_type>::type key_type;
-  typedef typename T::second_type mapped_type;
+  typedef typename std::remove_cv<typename T::first_type>::type key_type; // 用键值对，数据类型为 T
+  typedef typename T::second_type mapped_type; // 用键值对，数据类型为 mapped_type T::second_type
   typedef T value_type;
 
   template <class Ty>
