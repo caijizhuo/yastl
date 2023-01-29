@@ -8,8 +8,7 @@
 #include "iterator.h"
 #include "util.h"
 
-namespace yastl
-{
+namespace yastl {
 
 #ifdef max
 #pragma message("#undefing marco max")
@@ -26,15 +25,13 @@ namespace yastl
 // 取二者中的较大值，语义相等时保证返回第一个参数
 /*****************************************************************************************/
 template <class T>
-const T& max(const T& lhs, const T& rhs)
-{
+const T& max(const T& lhs, const T& rhs) {
   return lhs < rhs ? rhs : lhs;
 }
 
 // 重载版本使用函数对象 comp 代替比较操作
 template <class T, class Compare>
-const T& max(const T& lhs, const T& rhs, Compare comp)
-{
+const T& max(const T& lhs, const T& rhs, Compare comp) {
   return comp(lhs, rhs) ? rhs : lhs;
 }
 
@@ -48,8 +45,7 @@ const T& min(const T& lhs, const T& rhs) {
 
 // 重载版本使用函数对象 comp 代替比较操作
 template <class T, class Compare>
-const T& min(const T& lhs, const T& rhs, Compare comp)
-{
+const T& min(const T& lhs, const T& rhs, Compare comp) {
   return comp(rhs, lhs) ? rhs : lhs;
 }
 
@@ -67,12 +63,8 @@ void iter_swap(FIter1 lhs, FIter2 rhs) {
 /*****************************************************************************************/
 // input_iterator_tag 版本
 template <class InputIter, class OutputIter>
-OutputIter 
-unchecked_copy_cat(InputIter first, InputIter last, OutputIter result, 
-                   yastl::input_iterator_tag)
-{
-  for (; first != last; ++first, ++result)
-  {
+OutputIter unchecked_copy_cat(InputIter first, InputIter last, OutputIter result, yastl::input_iterator_tag) {
+  for (; first != last; ++first, ++result) {
     *result = *first;
   }
   return result;
@@ -80,56 +72,49 @@ unchecked_copy_cat(InputIter first, InputIter last, OutputIter result,
 
 // ramdom_access_iterator_tag 版本
 template <class RandomIter, class OutputIter>
-OutputIter 
-unchecked_copy_cat(RandomIter first, RandomIter last, OutputIter result,
-                   yastl::random_access_iterator_tag)
-{
-  for (auto n = last - first; n > 0; --n, ++first, ++result)
-  {
+OutputIter unchecked_copy_cat(RandomIter first, RandomIter last, OutputIter result, yastl::random_access_iterator_tag) {
+  for (auto n = last - first; n > 0; --n, ++first, ++result) { // 校验 n > 0 条件比 first != last 快，大概
     *result = *first;
   }
   return result;
 }
 
 template <class InputIter, class OutputIter>
-OutputIter 
-unchecked_copy(InputIter first, InputIter last, OutputIter result)
-{
+OutputIter unchecked_copy(InputIter first, InputIter last, OutputIter result) {
   return unchecked_copy_cat(first, last, result, iterator_category(first));
 }
 
 // 为 trivially_copy_assignable 类型提供特化版本
 template <class Tp, class Up>
-typename std::enable_if<
-  std::is_same<typename std::remove_const<Tp>::type, Up>::value &&
-  std::is_trivially_copy_assignable<Up>::value,
-  Up*>::type
-unchecked_copy(Tp* first, Tp* last, Up* result)
-{
+typename std::enable_if<std::is_same<typename std::remove_const<Tp>::type, Up>::value &&
+                        std::is_trivially_copy_assignable<Up>::value,
+                        Up*>::type
+unchecked_copy(Tp* first, Tp* last, Up* result) {
   const auto n = static_cast<size_t>(last - first);
-  if (n != 0)
-    std::memmove(result, first, n * sizeof(Up));
+  if (n != 0) {
+    std::memmove(result, first, n * sizeof(Up)); // 可以简单构造的对象，不包含指向内存的指针，直接浅拷贝
+  }
   return result + n;
 }
 
 template <class InputIter, class OutputIter>
-OutputIter copy(InputIter first, InputIter last, OutputIter result)
-{
+OutputIter copy(InputIter first, InputIter last, OutputIter result) {
   return unchecked_copy(first, last, result);
 }
 
 /*****************************************************************************************/
 // copy_backward
 // 将 [first, last)区间内的元素拷贝到 [result - (last - first), result)内
+// 简而言之让 result 成为 last
 /*****************************************************************************************/
 // unchecked_copy_backward_cat 的 bidirectional_iterator_tag 版本
 template <class BidirectionalIter1, class BidirectionalIter2>
 BidirectionalIter2 
 unchecked_copy_backward_cat(BidirectionalIter1 first, BidirectionalIter1 last,
-                            BidirectionalIter2 result, yastl::bidirectional_iterator_tag)
-{
-  while (first != last)
+                            BidirectionalIter2 result, yastl::bidirectional_iterator_tag) {
+  while (first != last) {
     *--result = *--last;
+  }
   return result;
 }
 
@@ -137,20 +122,18 @@ unchecked_copy_backward_cat(BidirectionalIter1 first, BidirectionalIter1 last,
 template <class RandomIter1, class BidirectionalIter2>
 BidirectionalIter2 
 unchecked_copy_backward_cat(RandomIter1 first, RandomIter1 last,
-                            BidirectionalIter2 result, yastl::random_access_iterator_tag)
-{
-  for (auto n = last - first; n > 0; --n)
+                            BidirectionalIter2 result, yastl::random_access_iterator_tag) {
+  for (auto n = last - first; n > 0; --n) {
     *--result = *--last;
+  }
   return result;
 }
 
 template <class BidirectionalIter1, class BidirectionalIter2>
 BidirectionalIter2 
 unchecked_copy_backward(BidirectionalIter1 first, BidirectionalIter1 last,
-                        BidirectionalIter2 result)
-{
-  return unchecked_copy_backward_cat(first, last, result,
-                                     iterator_category(first));
+                        BidirectionalIter2 result) {
+  return unchecked_copy_backward_cat(first, last, result, iterator_category(first)); // 让这个函数选择调用哪个
 }
 
 // 为 trivially_copy_assignable 类型提供特化版本
@@ -166,7 +149,7 @@ unchecked_copy_backward(Tp* first, Tp* last, Up* result) {
   }
   return result;
 }
-// 将指定序列 局部 逆序 放在另一个序列中
+// 将指定序列 result 为 last，放在另一个序列中
 template <class BidirectionalIter1, class BidirectionalIter2>
 BidirectionalIter2 copy_backward(BidirectionalIter1 first, BidirectionalIter1 last, BidirectionalIter2 result) {
   return unchecked_copy_backward(first, last, result);
@@ -177,13 +160,11 @@ BidirectionalIter2 copy_backward(BidirectionalIter1 first, BidirectionalIter1 la
 // 把[first, last)内满足一元操作 unary_pred 的元素拷贝到以 result 为起始的位置上
 /*****************************************************************************************/
 template <class InputIter, class OutputIter, class UnaryPredicate>
-OutputIter 
-copy_if(InputIter first, InputIter last, OutputIter result, UnaryPredicate unary_pred)
-{
-  for (; first != last; ++first)
-  {
-    if (unary_pred(*first))
+OutputIter copy_if(InputIter first, InputIter last, OutputIter result, UnaryPredicate unary_pred) {
+  for (; first != last; ++first) {
+    if (unary_pred(*first)) { // 满足条件就放过去
       *result++ = *first;
+    }
   }
   return result;
 }
@@ -195,10 +176,8 @@ copy_if(InputIter first, InputIter last, OutputIter result, UnaryPredicate unary
 /*****************************************************************************************/
 template <class InputIter, class Size, class OutputIter>
 yastl::pair<InputIter, OutputIter>
-unchecked_copy_n(InputIter first, Size n, OutputIter result, yastl::input_iterator_tag)
-{
-  for (; n > 0; --n, ++first, ++result)
-  {
+unchecked_copy_n(InputIter first, Size n, OutputIter result, yastl::input_iterator_tag) {
+  for (; n > 0; --n, ++first, ++result) { // 普通的 input iter 需要依次遍历赋值
     *result = *first;
   }
   return yastl::pair<InputIter, OutputIter>(first, result);
@@ -206,18 +185,15 @@ unchecked_copy_n(InputIter first, Size n, OutputIter result, yastl::input_iterat
 
 template <class RandomIter, class Size, class OutputIter>
 yastl::pair<RandomIter, OutputIter>
-unchecked_copy_n(RandomIter first, Size n, OutputIter result, 
-                 yastl::random_access_iterator_tag)
-{
+unchecked_copy_n(RandomIter first, Size n, OutputIter result, yastl::random_access_iterator_tag) {
   auto last = first + n;
+  // 可以随机访问，则调用 copy，批量赋值
   return yastl::pair<RandomIter, OutputIter>(last, yastl::copy(first, last, result));
 }
 
 template <class InputIter, class Size, class OutputIter>
-yastl::pair<InputIter, OutputIter> 
-copy_n(InputIter first, Size n, OutputIter result)
-{
-  return unchecked_copy_n(first, n, result, iterator_category(first));
+yastl::pair<InputIter, OutputIter> copy_n(InputIter first, Size n, OutputIter result) {
+  return unchecked_copy_n(first, n, result, iterator_category(first)); // 编译时决定调用哪个
 }
 
 /*****************************************************************************************/
@@ -226,12 +202,8 @@ copy_n(InputIter first, Size n, OutputIter result)
 /*****************************************************************************************/
 // input_iterator_tag 版本
 template <class InputIter, class OutputIter>
-OutputIter 
-unchecked_move_cat(InputIter first, InputIter last, OutputIter result,
-                   yastl::input_iterator_tag)
-{
-  for (; first != last; ++first, ++result)
-  {
+OutputIter unchecked_move_cat(InputIter first, InputIter last, OutputIter result, yastl::input_iterator_tag) {
+  for (; first != last; ++first, ++result) {
     *result = yastl::move(*first);
   }
   return result;
@@ -239,35 +211,28 @@ unchecked_move_cat(InputIter first, InputIter last, OutputIter result,
 
 // ramdom_access_iterator_tag 版本
 template <class RandomIter, class OutputIter>
-OutputIter 
-unchecked_move_cat(RandomIter first, RandomIter last, OutputIter result,
-                   yastl::random_access_iterator_tag)
-{
-  for (auto n = last - first; n > 0; --n, ++first, ++result)
-  {
+OutputIter unchecked_move_cat(RandomIter first, RandomIter last, OutputIter result, yastl::random_access_iterator_tag) {
+  for (auto n = last - first; n > 0; --n, ++first, ++result) {
     *result = yastl::move(*first);
   }
   return result;
 }
 
 template <class InputIter, class OutputIter>
-OutputIter 
-unchecked_move(InputIter first, InputIter last, OutputIter result)
-{
+OutputIter unchecked_move(InputIter first, InputIter last, OutputIter result) {
   return unchecked_move_cat(first, last, result, iterator_category(first));
 }
 
 // 为 trivially_copy_assignable 类型提供特化版本
 template <class Tp, class Up>
-typename std::enable_if<
-  std::is_same<typename std::remove_const<Tp>::type, Up>::value &&
-  std::is_trivially_move_assignable<Up>::value,
-  Up*>::type
-unchecked_move(Tp* first, Tp* last, Up* result)
-{
+typename std::enable_if<std::is_same<typename std::remove_const<Tp>::type, Up>::value &&
+                        std::is_trivially_move_assignable<Up>::value,
+                        Up*>::type
+unchecked_move(Tp* first, Tp* last, Up* result) {
   const size_t n = static_cast<size_t>(last - first);
-  if (n != 0)
-    std::memmove(result, first, n * sizeof(Up));
+  if (n != 0) {
+    std::memmove(result, first, n * sizeof(Up)); // 无需调用构造函数，直接复制内存
+  }
   return result + n;
 }
 
@@ -295,7 +260,7 @@ BidirectionalIter2 unchecked_move_backward_cat(BidirectionalIter1 first, Bidirec
 template <class RandomIter1, class RandomIter2>
 RandomIter2 unchecked_move_backward_cat(RandomIter1 first, RandomIter1 last,
                                         RandomIter2 result, yastl::random_access_iterator_tag) {
-  for (auto n = last - first; n > 0; --n) { // 好像和上面的没啥太大区别？比较次数作为结束条件
+  for (auto n = last - first; n > 0; --n) { // 比较次数作为结束条件，会快一点
     *--result = yastl::move(*--last);
   }
   return result;
@@ -333,8 +298,9 @@ BidirectionalIter2 move_backward(BidirectionalIter1 first, BidirectionalIter1 la
 template <class InputIter1, class InputIter2>
 bool equal(InputIter1 first1, InputIter1 last1, InputIter2 first2) {
   for (; first1 != last1; ++first1, ++first2) {
-    if (*first1 != *first2)  
+    if (*first1 != *first2) {
       return false;
+    }
   }
   return true;
 }
@@ -364,15 +330,12 @@ OutputIter unchecked_fill_n(OutputIter first, Size n, const T& value) {
 
 // 为 one-byte 类型提供特化版本
 template <class Tp, class Size, class Up>
-typename std::enable_if<
-  std::is_integral<Tp>::value && sizeof(Tp) == 1 &&
-  !std::is_same<Tp, bool>::value &&
-  std::is_integral<Up>::value && sizeof(Up) == 1,
-  Tp*>::type
-unchecked_fill_n(Tp* first, Size n, Up value)
-{
-  if (n > 0)
-  {
+typename std::enable_if<std::is_integral<Tp>::value && sizeof(Tp) == 1 &&
+                        !std::is_same<Tp, bool>::value &&
+                        std::is_integral<Up>::value && sizeof(Up) == 1,
+                        Tp*>::type
+unchecked_fill_n(Tp* first, Size n, Up value) {
+  if (n > 0) {
     std::memset(first, (unsigned char)value, (size_t)(n));
   }
   return first + n;
@@ -416,14 +379,14 @@ void fill(ForwardIter first, ForwardIter last, const T& value) {
 // (4)如果同时到达 last1 和 last2 返回 false
 template <class InputIter1, class InputIter2>
 bool lexicographical_compare(InputIter1 first1, InputIter1 last1,
-                             InputIter2 first2, InputIter2 last2)
-{
-  for (; first1 != last1 && first2 != last2; ++first1, ++first2)
-  {
-    if (*first1 < *first2)
+                             InputIter2 first2, InputIter2 last2) {
+  for (; first1 != last1 && first2 != last2; ++first1, ++first2) {
+    if (*first1 < *first2) {
       return true;
-    if (*first2 < *first1)
+    }
+    if (*first2 < *first1) {
       return false;
+    }
   }
   return first1 == last1 && first2 != last2;
 }
@@ -431,19 +394,19 @@ bool lexicographical_compare(InputIter1 first1, InputIter1 last1,
 // 重载版本使用函数对象 comp 代替比较操作
 template <class InputIter1, class InputIter2, class Compred>
 bool lexicographical_compare(InputIter1 first1, InputIter1 last1,
-                             InputIter2 first2, InputIter2 last2, Compred comp)
-{
-  for (; first1 != last1 && first2 != last2; ++first1, ++first2)
-  {
-    if (comp(*first1, *first2))
+                             InputIter2 first2, InputIter2 last2, Compred comp) {
+  for (; first1 != last1 && first2 != last2; ++first1, ++first2) {
+    if (comp(*first1, *first2)) {
       return true;
-    if (comp(*first2, *first1))
+    }
+    if (comp(*first2, *first1)) {
       return false;
+    }
   }
   return first1 == last1 && first2 != last2;
 }
 
-// 针对 const unsigned char* 的特化版本 字典序比较两个序列
+// 针对 const unsigned char* 的特化版本 字典序比较两个序列，比较快
 bool lexicographical_compare(const unsigned char* first1, const unsigned char* last1,
                              const unsigned char* first2, const unsigned char* last2) {
   const auto len1 = last1 - first1;
@@ -459,11 +422,8 @@ bool lexicographical_compare(const unsigned char* first1, const unsigned char* l
 // 平行比较两个序列，找到第一处失配的元素，返回一对迭代器，分别指向两个序列中失配的元素
 /*****************************************************************************************/
 template <class InputIter1, class InputIter2>
-yastl::pair<InputIter1, InputIter2> 
-mismatch(InputIter1 first1, InputIter1 last1, InputIter2 first2)
-{
-  while (first1 != last1 && *first1 == *first2)
-  {
+yastl::pair<InputIter1, InputIter2> mismatch(InputIter1 first1, InputIter1 last1, InputIter2 first2) {
+  while (first1 != last1 && *first1 == *first2) {
     ++first1;
     ++first2;
   }
@@ -472,11 +432,8 @@ mismatch(InputIter1 first1, InputIter1 last1, InputIter2 first2)
 
 // 重载版本使用函数对象 comp 代替比较操作
 template <class InputIter1, class InputIter2, class Compred>
-yastl::pair<InputIter1, InputIter2> 
-mismatch(InputIter1 first1, InputIter1 last1, InputIter2 first2, Compred comp)
-{
-  while (first1 != last1 && comp(*first1, *first2))
-  {
+yastl::pair<InputIter1, InputIter2> mismatch(InputIter1 first1, InputIter1 last1, InputIter2 first2, Compred comp) {
+  while (first1 != last1 && comp(*first1, *first2)) {
     ++first1;
     ++first2;
   }

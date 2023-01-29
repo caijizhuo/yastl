@@ -11,20 +11,18 @@
 #include "heap_algo.h"
 #include "functional.h"
 
-namespace yastl
-{
+namespace yastl {
 
 /*****************************************************************************************/
 // all_of
 // 检查[first, last)内是否全部元素都满足一元操作 unary_pred 为 true 的情况，满足则返回 true
 /*****************************************************************************************/
 template <class InputIter, class UnaryPredicate>
-bool all_of(InputIter first, InputIter last, UnaryPredicate unary_pred)
-{
-  for (; first != last; ++first)
-  {
-    if (!unary_pred(*first))
+bool all_of(InputIter first, InputIter last, UnaryPredicate unary_pred) {
+  for (; first != last; ++first) {
+    if (!unary_pred(*first)) {
       return false;
+    }
   }
   return true;
 }
@@ -34,12 +32,11 @@ bool all_of(InputIter first, InputIter last, UnaryPredicate unary_pred)
 // 检查[first, last)内是否存在某个元素满足一元操作 unary_pred 为 true 的情况，满足则返回 true
 /*****************************************************************************************/
 template <class InputIter, class UnaryPredicate>
-bool any_of(InputIter first, InputIter last, UnaryPredicate unary_pred)
-{
-  for (; first != last; ++first)
-  {
-    if (unary_pred(*first))
+bool any_of(InputIter first, InputIter last, UnaryPredicate unary_pred) {
+  for (; first != last; ++first) {
+    if (unary_pred(*first)) {
       return true;
+    }
   }
   return false;
 }
@@ -49,12 +46,11 @@ bool any_of(InputIter first, InputIter last, UnaryPredicate unary_pred)
 // 检查[first, last)内是否全部元素都不满足一元操作 unary_pred 为 true 的情况，满足则返回 true
 /*****************************************************************************************/
 template <class InputIter, class UnaryPredicate>
-bool none_of(InputIter first, InputIter last, UnaryPredicate unary_pred)
-{
-  for (; first != last; ++first)
-  {
-    if (unary_pred(*first))
+bool none_of(InputIter first, InputIter last, UnaryPredicate unary_pred) {
+  for (; first != last; ++first) {
+    if (unary_pred(*first)) {
       return false;
+    }
   }
   return true;
 }
@@ -64,13 +60,12 @@ bool none_of(InputIter first, InputIter last, UnaryPredicate unary_pred)
 // 对[first, last)区间内的元素与给定值进行比较，缺省使用 operator==，返回元素相等的个数
 /*****************************************************************************************/
 template <class InputIter, class T>
-size_t count(InputIter first, InputIter last, const T& value)
-{
+size_t count(InputIter first, InputIter last, const T& value) {
   size_t n = 0;
-  for (; first != last; ++first)
-  {
-    if (*first == value)
+  for (; first != last; ++first) {
+    if (*first == value) {
       ++n;
+    }
   }
   return n;
 }
@@ -80,13 +75,12 @@ size_t count(InputIter first, InputIter last, const T& value)
 // 对[first, last)区间内的每个元素都进行一元 unary_pred 操作，返回结果为 true 的个数
 /*****************************************************************************************/
 template <class InputIter, class UnaryPredicate>
-size_t count_if(InputIter first, InputIter last, UnaryPredicate unary_pred)
-{
+size_t count_if(InputIter first, InputIter last, UnaryPredicate unary_pred) {
   size_t n = 0;
-  for (; first != last; ++first)
-  {
-    if (unary_pred(*first))
+  for (; first != last; ++first) {
+    if (unary_pred(*first)) {
       ++n;
+    }
   }
   return n;
 }
@@ -96,11 +90,10 @@ size_t count_if(InputIter first, InputIter last, UnaryPredicate unary_pred)
 // 在[first, last)区间内找到等于 value 的元素，返回指向该元素的迭代器
 /*****************************************************************************************/
 template <class InputIter, class T>
-InputIter
-find(InputIter first, InputIter last, const T& value)
-{
-  while (first != last && *first != value)
+InputIter find(InputIter first, InputIter last, const T& value) {
+  while (first != last && *first != value) {
     ++first;
+  }
   return first;
 }
 
@@ -109,11 +102,10 @@ find(InputIter first, InputIter last, const T& value)
 // 在[first, last)区间内找到第一个令一元操作 unary_pred 为 true 的元素并返回指向该元素的迭代器
 /*****************************************************************************************/
 template <class InputIter, class UnaryPredicate>
-InputIter
-find_if(InputIter first, InputIter last, UnaryPredicate unary_pred)
-{
-  while (first != last && !unary_pred(*first))
+InputIter find_if(InputIter first, InputIter last, UnaryPredicate unary_pred) {
+  while (first != last && !unary_pred(*first)) {
     ++first;
+  }
   return first;
 }
 
@@ -122,11 +114,10 @@ find_if(InputIter first, InputIter last, UnaryPredicate unary_pred)
 // 在[first, last)区间内找到第一个令一元操作 unary_pred 为 false 的元素并返回指向该元素的迭代器
 /*****************************************************************************************/
 template <class InputIter, class UnaryPredicate>
-InputIter
-find_if_not(InputIter first, InputIter last, UnaryPredicate unary_pred)
-{
-  while (first != last && unary_pred(*first))
+InputIter find_if_not(InputIter first, InputIter last, UnaryPredicate unary_pred) {
+  while (first != last && unary_pred(*first)) {
     ++first;
+  }
   return first;
 }
 
@@ -135,67 +126,49 @@ find_if_not(InputIter first, InputIter last, UnaryPredicate unary_pred)
 // 在[first1, last1)中查找[first2, last2)的首次出现点
 /*****************************************************************************************/
 template <class ForwardIter1, class ForwardIter2>
-ForwardIter1
-search(ForwardIter1 first1, ForwardIter1 last1,
-       ForwardIter2 first2, ForwardIter2 last2)
-{
+ForwardIter1 search(ForwardIter1 first1, ForwardIter1 last1, ForwardIter2 first2, ForwardIter2 last2) {
   auto d1 = yastl::distance(first1, last1);
   auto d2 = yastl::distance(first2, last2);
-  if (d1 < d2)
-    return last1;
+  if (d1 < d2) {
+    return last1; // 2 比 1 长，没找到
+  }
   auto current1 = first1;
   auto current2 = first2;
-  while (current2 != last2)
-  {
-    if (*current1 == *current2)
-    {
+  while (current2 != last2) {
+    if (*current1 == *current2) { // 向后看一位
       ++current1;
       ++current2;
-    }
-    else
-    {
-      if (d1 == d2)
-      {
-        return last1;
-      }
-      else
-      {
-        current1 = ++first1;
+    } else { // 不相等了
+      if (d1 == d2) {
+        return last1; // 后面也不可能相等了 直接返回没找到
+      } else {
+        current1 = ++first1; // 1 前进一位，2 重新来
         current2 = first2;
         --d1;
       }
     }
   }
-  return first1;
+  return first1; // 循环结束，找到了
 }
 
 // 重载版本使用函数对象 comp 代替比较操作
 template <class ForwardIter1, class ForwardIter2, class Compared>
-ForwardIter1
-search(ForwardIter1 first1, ForwardIter1 last1,
-       ForwardIter2 first2, ForwardIter2 last2, Compared comp)
-{
+ForwardIter1 search(ForwardIter1 first1, ForwardIter1 last1, ForwardIter2 first2, ForwardIter2 last2, Compared comp) {
   auto d1 = yastl::distance(first1, last1);
   auto d2 = yastl::distance(first2, last2);
-  if (d1 < d2)
+  if (d1 < d2) {
     return last1;
+  }
   auto current1 = first1;
   auto current2 = first2;
-  while (current2 != last2)
-  {
-    if (comp(*current1, *current2))
-    {
+  while (current2 != last2) {
+    if (comp(*current1, *current2)) {
       ++current1;
       ++current2;
-    }
-    else
-    {
-      if (d1 == d2)
-      {
+    } else {
+      if (d1 == d2) {
         return last1;
-      }
-      else
-      {
+      } else {
         current1 = ++first1;
         current2 = first2;
         --d1;
@@ -210,77 +183,56 @@ search(ForwardIter1 first1, ForwardIter1 last1,
 // 在[first, last)中查找连续 n 个 value 所形成的子序列，返回一个迭代器指向该子序列的起始处
 /*****************************************************************************************/
 template <class ForwardIter, class Size, class T>
-ForwardIter
-search_n(ForwardIter first, ForwardIter last, Size n, const T& value)
-{
-  if (n <= 0)
-  {
+ForwardIter search_n(ForwardIter first, ForwardIter last, Size n, const T& value) {
+  if (n <= 0) {
     return first;
-  }
-  else
-  {
-    first = yastl::find(first, last, value);
-    while (first != last)
-    {
-      auto m = n - 1;
-      auto i = first;
+  } else {
+    first = yastl::find(first, last, value); // 找到第一个
+    while (first != last) {
+      auto m = n - 1; // 还要找几个值
+      auto i = first; // 当前迭代器
       ++i;
-      while (i != last && m != 0 && *i == value)
-      {
+      while (i != last && m != 0 && *i == value) {
         ++i;
         --m;
       }
-      if (m == 0)
-      {
-        return first;
-      }
-      else
-      {
+      if (m == 0) {
+        return first; // 最开始的迭代器就是要找的
+      } else { // 数量不够，从 i 开始再找 n 个
         first = yastl::find(i, last, value);
       }
     }
-    return last;
+    return last; // 没找到
   }
 }
 
 // 重载版本使用函数对象 comp 代替比较操作
 template <class ForwardIter, class Size, class T, class Compared>
-ForwardIter
-search_n(ForwardIter first, ForwardIter last,
-         Size n, const T& value, Compared comp)
-{
-  if (n <= 0)
-  {
+ForwardIter search_n(ForwardIter first, ForwardIter last, Size n, const T& value, Compared comp) {
+  if (n <= 0) {
     return first;
-  }
-  else
-  {
-    while (first != last)
-    {
-      if (comp(*first, value))
+  } else {
+    while (first != last) { // 找到第一个符合条件的迭代器 相当于上面的 find
+      if (comp(*first, value)) {
         break;
+      }
       ++first;
     }
-    while (first != last)
-    {
+    while (first != last) {
       auto m = n - 1;
       auto i = first;
       ++i;
-      while (i != last && m != 0 && comp(*i, value))
-      {
+      while (i != last && m != 0 && comp(*i, value)) {
         ++i;
         --m;
       }
-      if (m == 0)
-      {
+      if (m == 0) {
         return first;
-      }
-      else
-      {
-        while (i != last)
-        {
-          if (comp(*i, value))
+      } else {
+        while (i != last) { // 找到下一个符合条件的迭代器 相当于上面的 find
+          if (comp(*i, value)) {
             break;
+          }
           ++i;
         }
         first = i;
