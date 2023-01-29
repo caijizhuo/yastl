@@ -248,31 +248,22 @@ ForwardIter search_n(ForwardIter first, ForwardIter last, Size n, const T& value
 /*****************************************************************************************/
 // find_end_dispatch 的 forward_iterator_tag 版本
 template <class ForwardIter1, class ForwardIter2>
-ForwardIter1
-find_end_dispatch(ForwardIter1 first1, ForwardIter1 last1,
-                  ForwardIter2 first2, ForwardIter2 last2,
-                  forward_iterator_tag, forward_iterator_tag)
-{
-  if (first2 == last2)
-  {
+ForwardIter1 find_end_dispatch(ForwardIter1 first1, ForwardIter1 last1,
+                               ForwardIter2 first2, ForwardIter2 last2,
+                               forward_iterator_tag, forward_iterator_tag) {
+  if (first2 == last2) { // 寻找区间为空 没找到
     return last1;
-  }
-  else
-  {
+  } else {
     auto result = last1;
-    while (true)
-    {
+    while (true) {
       // 利用 search 查找某个子序列的首次出现点，找不到则返回 last1
       auto new_result = yastl::search(first1, last1, first2, last2);
-      if (new_result == last1)
-      {
+      if (new_result == last1) {
         return result;
-      }
-      else
-      {
+      } else {
         result = new_result;
         first1 = new_result;
-        ++first1;
+        ++first1; // 向后移动 first1，尝试寻找下一个
       }
     }
   }
@@ -280,33 +271,26 @@ find_end_dispatch(ForwardIter1 first1, ForwardIter1 last1,
 
 // find_end_dispatch 的 bidirectional_iterator_tag 版本
 template <class BidirectionalIter1, class BidirectionalIter2>
-BidirectionalIter1
-find_end_dispatch(BidirectionalIter1 first1, BidirectionalIter1 last1,
-                  BidirectionalIter2 first2, BidirectionalIter2 last2,
-                  bidirectional_iterator_tag, bidirectional_iterator_tag)
-{
+BidirectionalIter1 find_end_dispatch(BidirectionalIter1 first1, BidirectionalIter1 last1,
+                                     BidirectionalIter2 first2, BidirectionalIter2 last2,
+                                     bidirectional_iterator_tag, bidirectional_iterator_tag) {
   typedef reverse_iterator<BidirectionalIter1> reviter1;
   typedef reverse_iterator<BidirectionalIter2> reviter2;
   reviter1 rlast1(first1);
   reviter2 rlast2(first2);
+  // 因为是反向的，找到的第一个便是对应区间
   reviter1 rresult = yastl::search(reviter1(last1), rlast1, reviter2(last2), rlast2);
-  if (rresult == rlast1)
-  {
+  if (rresult == rlast1) { // 没找到
     return last1;
-  }
-  else
-  {
+  } else {
     auto result = rresult.base();
-    yastl::advance(result, -yastl::distance(first2, last2));
+    yastl::advance(result, -yastl::distance(first2, last2)); // 得到的是区间的尾部，还需要减去长度从而得到头部迭代器
     return result;
   }
 }
 
 template <class ForwardIter1, class ForwardIter2>
-ForwardIter1
-find_end(ForwardIter1 first1, ForwardIter1 last1,
-         ForwardIter2 first2, ForwardIter2 last2)
-{
+ForwardIter1 find_end(ForwardIter1 first1, ForwardIter1 last1, ForwardIter2 first2, ForwardIter2 last2) {
   typedef typename iterator_traits<ForwardIter1>::iterator_category Category1;
   typedef typename iterator_traits<ForwardIter2>::iterator_category Category2;
   return yastl::find_end_dispatch(first1, last1, first2, last2, Category1(), Category2());
@@ -315,28 +299,19 @@ find_end(ForwardIter1 first1, ForwardIter1 last1,
 // 重载版本使用函数对象 comp 代替比较操作
 // find_end_dispatch 的 forward_iterator_tag 版本
 template <class ForwardIter1, class ForwardIter2, class Compared>
-ForwardIter1
-find_end_dispatch(ForwardIter1 first1, ForwardIter1 last1,
-                  ForwardIter2 first2, ForwardIter2 last2,
-                  forward_iterator_tag, forward_iterator_tag, Compared comp)
-{
-  if (first2 == last2)
-  {
+ForwardIter1 find_end_dispatch(ForwardIter1 first1, ForwardIter1 last1,
+                               ForwardIter2 first2, ForwardIter2 last2,
+                               forward_iterator_tag, forward_iterator_tag, Compared comp) {
+  if (first2 == last2) {
     return last1;
-  }
-  else
-  {
+  } else {
     auto result = last1;
-    while (true)
-    {
+    while (true) {
       // 利用 search 查找某个子序列的首次出现点，找不到则返回 last1
       auto new_result = yastl::search(first1, last1, first2, last2, comp);
-      if (new_result == last1)
-      {
+      if (new_result == last1) {
         return result;
-      }
-      else
-      {
+      } else {
         result = new_result;
         first1 = new_result;
         ++first1;
@@ -347,22 +322,17 @@ find_end_dispatch(ForwardIter1 first1, ForwardIter1 last1,
 
 // find_end_dispatch 的 bidirectional_iterator_tag 版本
 template <class BidirectionalIter1, class BidirectionalIter2, class Compared>
-BidirectionalIter1
-find_end_dispatch(BidirectionalIter1 first1, BidirectionalIter1 last1,
-                  BidirectionalIter2 first2, BidirectionalIter2 last2,
-                  bidirectional_iterator_tag, bidirectional_iterator_tag, Compared comp)
-{
+BidirectionalIter1 find_end_dispatch(BidirectionalIter1 first1, BidirectionalIter1 last1,
+                                     BidirectionalIter2 first2, BidirectionalIter2 last2,
+                                     bidirectional_iterator_tag, bidirectional_iterator_tag, Compared comp) {
   typedef reverse_iterator<BidirectionalIter1> reviter1;
   typedef reverse_iterator<BidirectionalIter2> reviter2;
   reviter1 rlast1(first1);
   reviter2 rlast2(first2);
   reviter1 rresult = yastl::search(reviter1(last1), rlast1, reviter2(last2), rlast2, comp);
-  if (rresult == rlast1)
-  {
+  if (rresult == rlast1) {
     return last1;
-  }
-  else
-  {
+  } else {
     auto result = rresult.base();
     yastl::advance(result, -yastl::distance(first2, last2));
     return result;
@@ -370,10 +340,8 @@ find_end_dispatch(BidirectionalIter1 first1, BidirectionalIter1 last1,
 }
 
 template <class ForwardIter1, class ForwardIter2, class Compared>
-ForwardIter1
-find_end(ForwardIter1 first1, ForwardIter1 last1,
-         ForwardIter2 first2, ForwardIter2 last2, Compared comp)
-{
+ForwardIter1 find_end(ForwardIter1 first1, ForwardIter1 last1,
+                      ForwardIter2 first2, ForwardIter2 last2, Compared comp) {
   typedef typename iterator_traits<ForwardIter1>::iterator_category Category1;
   typedef typename iterator_traits<ForwardIter2>::iterator_category Category2;
   return yastl::find_end_dispatch(first1, last1, first2, last2, Category1(), Category2(), comp);
@@ -384,33 +352,25 @@ find_end(ForwardIter1 first1, ForwardIter1 last1,
 // 在[first1, last1)中查找[first2, last2)中的某些元素，返回指向第一次出现的元素的迭代器
 /*****************************************************************************************/
 template <class InputIter, class ForwardIter>
-InputIter
-find_first_of(InputIter first1, InputIter last1,
-              ForwardIter first2, ForwardIter last2)
-{
-  for (; first1 != last1; ++first1)
-  {
-    for (auto iter = first2; iter != last2; ++iter)
-    {
-      if (*first1 == *iter)
-        return first1;
+InputIter find_first_of(InputIter first1, InputIter last1, ForwardIter first2, ForwardIter last2) {
+  for (; first1 != last1; ++first1) { // 两两比较
+    for (auto iter = first2; iter != last2; ++iter) {
+      if (*first1 == *iter) {
+        return first1; // 找到了直接返回
+      }
     }
   }
-  return last1;
+  return last1; // 没找到
 }
 
 // 重载版本使用函数对象 comp 代替比较操作
 template <class InputIter, class ForwardIter, class Compared>
-InputIter
-find_first_of(InputIter first1, InputIter last1,
-              ForwardIter first2, ForwardIter last2, Compared comp)
-{
-  for (; first1 != last1; ++first1)
-  {
-    for (auto iter = first2; iter != last2; ++iter)
-    {
-      if (comp(*first1, *iter))
+InputIter find_first_of(InputIter first1, InputIter last1, ForwardIter first2, ForwardIter last2, Compared comp) {
+  for (; first1 != last1; ++first1) {
+    for (auto iter = first2; iter != last2; ++iter) {
+      if (comp(*first1, *iter)) {
         return first1;
+      }
     }
   }
   return last1;
@@ -422,10 +382,8 @@ find_first_of(InputIter first1, InputIter last1,
 // f() 可返回一个值，但该值会被忽略
 /*****************************************************************************************/
 template <class InputIter, class Function>
-Function for_each(InputIter first, InputIter last, Function f)
-{
-  for (; first != last; ++first)
-  {
+Function for_each(InputIter first, InputIter last, Function f) {
+  for (; first != last; ++first) {
     f(*first);
   }
   return f;
@@ -436,13 +394,15 @@ Function for_each(InputIter first, InputIter last, Function f)
 // 找出第一对匹配的相邻元素，缺省使用 operator== 比较，如果找到返回一个迭代器，指向这对元素的第一个元素
 /*****************************************************************************************/
 template <class ForwardIter>
-ForwardIter adjacent_find(ForwardIter first, ForwardIter last)
-{
-  if (first == last)  return last;
+ForwardIter adjacent_find(ForwardIter first, ForwardIter last) {
+  if (first == last) { // 区间为空 直接没找到
+    return last;
+  }
   auto next = first;
-  while (++next != last)
-  {
-    if (*first == *next)  return first;
+  while (++next != last) { // 相邻 且 相等
+    if (*first == *next) {
+      return first;
+    }
     first = next;
   }
   return last;
@@ -450,13 +410,15 @@ ForwardIter adjacent_find(ForwardIter first, ForwardIter last)
 
 // 重载版本使用函数对象 comp 代替比较操作
 template <class ForwardIter, class Compared>
-ForwardIter adjacent_find(ForwardIter first, ForwardIter last, Compared comp)
-{
-  if (first == last)  return last;
+ForwardIter adjacent_find(ForwardIter first, ForwardIter last, Compared comp) {
+  if (first == last) {
+    return last;
+  }
   auto next = first;
-  while (++next != last)
-  {
-    if (comp(*first, *next))  return first;
+  while (++next != last) {
+    if (comp(*first, *next)) {
+      return first;
+    }
     first = next;
   }
   return last;
@@ -464,31 +426,24 @@ ForwardIter adjacent_find(ForwardIter first, ForwardIter last, Compared comp)
 
 /*****************************************************************************************/
 // lower_bound
-// 在[first, last)中查找第一个不小于 value 的元素，并返回指向它的迭代器，若没有则返回 last
+// 在[first, last)中查找第一个 不小于 value 的元素，并返回指向它的迭代器，若没有则返回 last
 /*****************************************************************************************/
 // lbound_dispatch 的 forward_iterator_tag 版本
 template <class ForwardIter, class T>
-ForwardIter
-lbound_dispatch(ForwardIter first, ForwardIter last,
-                const T& value, forward_iterator_tag)
-{
+ForwardIter lbound_dispatch(ForwardIter first, ForwardIter last, const T& value, forward_iterator_tag) {
   auto len = yastl::distance(first, last);
   auto half = len;
   ForwardIter middle;
-  while (len > 0)
-  {
-    half = len >> 1;
+  while (len > 0) { // 查找区间的规模，在不断缩小
+    half = len >> 1; // 二分查找
     middle = first;
     yastl::advance(middle, half);
-    if (*middle < value)
-    {
+    if (*middle < value) { // 中值小于期待 value 向右
       first = middle;
-      ++first;
+      ++first; // [middle + 1, middle + 1 + len)
       len = len - half - 1;
-    }
-    else
-    {
-      len = half;
+    } else {
+      len = half; // [first, first + len)
     }
   }
   return first;
@@ -496,60 +451,45 @@ lbound_dispatch(ForwardIter first, ForwardIter last,
 
 // lbound_dispatch 的 random_access_iterator_tag 版本
 template <class RandomIter, class T>
-RandomIter
-lbound_dispatch(RandomIter first, RandomIter last,
-                const T& value, random_access_iterator_tag)
-{
+RandomIter lbound_dispatch(RandomIter first, RandomIter last, const T& value, random_access_iterator_tag) {
   auto len = last - first;
   auto half = len;
   RandomIter middle;
-  while (len > 0)
-  {
+  while (len > 0) {
     half = len >> 1;
     middle = first + half;
-    if (*middle < value)
-    {
+    if (*middle < value) {
       first = middle + 1;
       len = len - half - 1;
-    }
-    else
-    {
+    } else {
       len = half;
     }
   }
   return first;
 }
 
+// 对外的函数，找出第一个 >= value 的迭代器
 template <class ForwardIter, class T>
-ForwardIter
-lower_bound(ForwardIter first, ForwardIter last, const T& value)
-{
+ForwardIter lower_bound(ForwardIter first, ForwardIter last, const T& value) {
   return yastl::lbound_dispatch(first, last, value, iterator_category(first));
 }
 
 // 重载版本使用函数对象 comp 代替比较操作
 // lbound_dispatch 的 forward_iterator_tag 版本
 template <class ForwardIter, class T, class Compared>
-ForwardIter
-lbound_dispatch(ForwardIter first, ForwardIter last,
-                const T& value, forward_iterator_tag, Compared comp)
-{
+ForwardIter lbound_dispatch(ForwardIter first, ForwardIter last, const T& value, forward_iterator_tag, Compared comp) {
   auto len = yastl::distance(first, last);
   auto half = len;
   ForwardIter middle;
-  while (len > 0)
-  {
+  while (len > 0) {
     half = len >> 1;
     middle = first;
     yastl::advance(middle, half);
-    if (comp(*middle, value))
-    {
+    if (comp(*middle, value)) { // 向右继续
       first = middle;
       ++first;
       len = len - half - 1;
-    }
-    else
-    {
+    } else { // 向左继续
       len = half;
     }
   }
@@ -558,24 +498,18 @@ lbound_dispatch(ForwardIter first, ForwardIter last,
 
 // lbound_dispatch 的 random_access_iterator_tag 版本
 template <class RandomIter, class T, class Compared>
-RandomIter
-lbound_dispatch(RandomIter first, RandomIter last,
-                const T& value, random_access_iterator_tag, Compared comp)
-{
+RandomIter lbound_dispatch(RandomIter first, RandomIter last,
+                           const T& value, random_access_iterator_tag, Compared comp) {
   auto len = last - first;
   auto half = len;
   RandomIter middle;
-  while (len > 0)
-  {
+  while (len > 0) {
     half = len >> 1;
     middle = first + half;
-    if (comp(*middle, value))
-    {
+    if (comp(*middle, value)) {
       first = middle + 1;
       len = len - half - 1;
-    }
-    else
-    {
+    } else {
       len = half;
     }
   }
@@ -583,36 +517,27 @@ lbound_dispatch(RandomIter first, RandomIter last,
 }
 
 template <class ForwardIter, class T, class Compared>
-ForwardIter
-lower_bound(ForwardIter first, ForwardIter last, const T& value, Compared comp)
-{
+ForwardIter lower_bound(ForwardIter first, ForwardIter last, const T& value, Compared comp) {
   return yastl::lbound_dispatch(first, last, value, iterator_category(first), comp);
 }
 
 /*****************************************************************************************/
 // upper_bound
-// 在[first, last)中查找第一个大于value 的元素，并返回指向它的迭代器，若没有则返回 last
+// 在[first, last)中查找第一个 大于value 的元素，并返回指向它的迭代器，若没有则返回 last
 /*****************************************************************************************/
 // ubound_dispatch 的 forward_iterator_tag 版本
 template <class ForwardIter, class T>
-ForwardIter
-ubound_dispatch(ForwardIter first, ForwardIter last,
-                const T& value, forward_iterator_tag)
-{
+ForwardIter ubound_dispatch(ForwardIter first, ForwardIter last, const T& value, forward_iterator_tag) {
   auto len = yastl::distance(first, last);
   auto half = len;
   ForwardIter middle;
-  while (len > 0)
-  {
-    half = len >> 1;
+  while (len > 0) {
+    half = len >> 1; // 二分
     middle = first;
     yastl::advance(middle, half);
-    if (value < *middle)
-    {
+    if (value < *middle) { // 已经大于了 向左
       len = half;
-    }
-    else
-    {
+    } else { // 向右
       first = middle;
       ++first;
       len = len - half - 1;
@@ -623,23 +548,16 @@ ubound_dispatch(ForwardIter first, ForwardIter last,
 
 // ubound_dispatch 的 random_access_iterator_tag 版本
 template <class RandomIter, class T>
-RandomIter
-ubound_dispatch(RandomIter first, RandomIter last,
-                const T& value, random_access_iterator_tag)
-{
+RandomIter ubound_dispatch(RandomIter first, RandomIter last, const T& value, random_access_iterator_tag) {
   auto len = last - first;
   auto half = len;
   RandomIter middle;
-  while (len > 0)
-  {
+  while (len > 0) {
     half = len >> 1;
     middle = first + half;
-    if (value < *middle)
-    {
+    if (value < *middle) {
       len = half;
-    }
-    else
-    {
+    } else {
       first = middle + 1;
       len = len - half - 1;
     }
@@ -648,33 +566,24 @@ ubound_dispatch(RandomIter first, RandomIter last,
 }
 
 template <class ForwardIter, class T>
-ForwardIter
-upper_bound(ForwardIter first, ForwardIter last, const T& value)
-{
+ForwardIter upper_bound(ForwardIter first, ForwardIter last, const T& value) {
   return yastl::ubound_dispatch(first, last, value, iterator_category(first));
 }
 
 // 重载版本使用函数对象 comp 代替比较操作
 // ubound_dispatch 的 forward_iterator_tag 版本
 template <class ForwardIter, class T, class Compared>
-ForwardIter
-ubound_dispatch(ForwardIter first, ForwardIter last,
-                const T& value, forward_iterator_tag, Compared comp)
-{
-  auto len = yastl::distance(first, last);
+ForwardIter ubound_dispatch(ForwardIter first, ForwardIter last, const T& value, forward_iterator_tag, Compared comp) {
+  auto len = yastl::distance(first, last); // 只能累加获得
   auto half = len;
   ForwardIter middle;
-  while (len > 0)
-  {
+  while (len > 0) {
     half = len >> 1;
     middle = first;
     yastl::advance(middle, half);
-    if (comp(value, *middle))
-    {
+    if (comp(value, *middle)) {
       len = half;
-    }
-    else
-    {
+    } else {
       first = middle;
       ++first;
       len = len - half - 1;
@@ -685,23 +594,17 @@ ubound_dispatch(ForwardIter first, ForwardIter last,
 
 // ubound_dispatch 的 random_access_iterator_tag 版本
 template <class RandomIter, class T, class Compared>
-RandomIter
-ubound_dispatch(RandomIter first, RandomIter last,
-                const T& value, random_access_iterator_tag, Compared comp)
-{
+RandomIter ubound_dispatch(RandomIter first, RandomIter last, const T& value,
+                           random_access_iterator_tag, Compared comp) {
   auto len = last - first;
   auto half = len;
   RandomIter middle;
-  while (len > 0)
-  {
+  while (len > 0) {
     half = len >> 1;
     middle = first + half;
-    if (comp(value, *middle))
-    {
+    if (comp(value, *middle)) {
       len = half;
-    }
-    else
-    {
+    } else {
       first = middle + 1;
       len = len - half - 1;
     }
@@ -710,9 +613,7 @@ ubound_dispatch(RandomIter first, RandomIter last,
 }
 
 template <class ForwardIter, class T, class Compared>
-ForwardIter
-upper_bound(ForwardIter first, ForwardIter last, const T& value, Compared comp)
-{
+ForwardIter upper_bound(ForwardIter first, ForwardIter last, const T& value, Compared comp) {
   return yastl::ubound_dispatch(first, last, value, iterator_category(first), comp);
 }
 
@@ -721,17 +622,15 @@ upper_bound(ForwardIter first, ForwardIter last, const T& value, Compared comp)
 // 二分查找，如果在[first, last)内有等同于 value 的元素，返回 true，否则返回 false
 /*****************************************************************************************/
 template <class ForwardIter, class T>
-bool binary_search(ForwardIter first, ForwardIter last, const T& value)
-{
+bool binary_search(ForwardIter first, ForwardIter last, const T& value) {
   auto i = yastl::lower_bound(first, last, value);
-  return i != last && !(value < *i);
+  return i != last && !(value < *i); // 找到并且找到的值不是大于(必须为等于)
 }
 
 // 重载版本使用函数对象 comp 代替比较操作
 template <class ForwardIter, class T, class Compared>
-bool binary_search(ForwardIter first, ForwardIter last, const T& value, Compared comp)
-{
-  auto i = yastl::lower_bound(first, last, value);
+bool binary_search(ForwardIter first, ForwardIter last, const T& value, Compared comp) {
+  auto i = yastl::lower_bound(first, last, value); // 这里是否有问题？没有传入 comp 版本
   return i != last && !comp(value, *i);
 }
 
@@ -742,63 +641,47 @@ bool binary_search(ForwardIter first, ForwardIter last, const T& value, Compared
 /*****************************************************************************************/
 // erange_dispatch 的 forward_iterator_tag 版本
 template <class ForwardIter, class T>
-yastl::pair<ForwardIter, ForwardIter>
-erange_dispatch(ForwardIter first, ForwardIter last,
-                const T& value, forward_iterator_tag)
-{
+yastl::pair<ForwardIter, ForwardIter> erange_dispatch(ForwardIter first, ForwardIter last,
+                                                      const T& value, forward_iterator_tag) {
   auto len = yastl::distance(first, last);
   auto half = len;
   ForwardIter middle, left, right;
-  while (len > 0)
-  {
+  while (len > 0) { // 二分查找
     half = len >> 1;
     middle = first;
     yastl::advance(middle, half);
-    if (*middle < value)
-    {
+    if (*middle < value) { // 小于 向右移动
       first = middle;
       ++first;
       len = len - half - 1;
-    }
-    else if (value < *middle)
-    {
+    } else if (value < *middle) { // 大于 向左移动
       len = half;
-    }
-    else
-    {
-      left = yastl::lower_bound(first, last, value);
-      yastl::advance(first, len);
-      right = yastl::upper_bound(++middle, first, value);
+    } else { // 等于
+      left = yastl::lower_bound(first, last, value); // 先找左边界
+      yastl::advance(first, len); // 缩小查找范围
+      right = yastl::upper_bound(++middle, first, value); // 再找右边界
       return yastl::pair<ForwardIter, ForwardIter>(left, right);
     }
   }
-  return yastl::pair<ForwardIter, ForwardIter>(last, last);
+  return yastl::pair<ForwardIter, ForwardIter>(last, last); // 没找到
 }
 
 // erange_dispatch 的 random_access_iterator_tag 版本
 template <class RandomIter, class T>
-yastl::pair<RandomIter, RandomIter>
-erange_dispatch(RandomIter first, RandomIter last,
-                const T& value, random_access_iterator_tag)
-{
+yastl::pair<RandomIter, RandomIter> erange_dispatch(RandomIter first, RandomIter last,
+                                                    const T& value, random_access_iterator_tag) {
   auto len = last - first;
   auto half = len;
   RandomIter middle, left, right;
-  while (len > 0)
-  {
+  while (len > 0) {
     half = len >> 1;
     middle = first + half;
-    if (*middle < value)
-    {
+    if (*middle < value) {  // 小于 向右移动
       first = middle + 1;
       len = len - half - 1;
-    }
-    else if (value < *middle)
-    {
+    } else if (value < *middle) {  // 大于 向左移动
       len = half;
-    }
-    else
-    {
+    } else { // 等于
       left = yastl::lower_bound(first, middle, value);
       right = yastl::upper_bound(++middle, first + len, value);
       return yastl::pair<RandomIter, RandomIter>(left, right);
@@ -808,39 +691,29 @@ erange_dispatch(RandomIter first, RandomIter last,
 }
 
 template <class ForwardIter, class T>
-yastl::pair<ForwardIter, ForwardIter>
-equal_range(ForwardIter first, ForwardIter last, const T& value)
-{
+yastl::pair<ForwardIter, ForwardIter> equal_range(ForwardIter first, ForwardIter last, const T& value) {
   return yastl::erange_dispatch(first, last, value, iterator_category(first));
 }
 
 // 重载版本使用函数对象 comp 代替比较操作
 // erange_dispatch 的 forward iterator 版本
 template <class ForwardIter, class T, class Compared>
-yastl::pair<ForwardIter, ForwardIter>
-erange_dispatch(ForwardIter first, ForwardIter last,
-                const T& value, forward_iterator_tag, Compared comp)
-{
+yastl::pair<ForwardIter, ForwardIter> erange_dispatch(ForwardIter first, ForwardIter last,
+                                                      const T& value, forward_iterator_tag, Compared comp) {
   auto len = yastl::distance(first, last);
   auto half = len;
   ForwardIter middle, left, right;
-  while (len > 0)
-  {
+  while (len > 0) {
     half = len >> 1;
     middle = first;
     yastl::advance(middle, half);
-    if (comp(*middle, value))
-    {
+    if (comp(*middle, value)) {
       first = middle;
       ++first;
       len = len - half - 1;
-    }
-    else if (comp(value, *middle))
-    {
+    } else if (comp(value, *middle)) {
       len = half;
-    }
-    else
-    {
+    } else {
       left = yastl::lower_bound(first, last, value, comp);
       yastl::advance(first, len);
       right = yastl::upper_bound(++middle, first, value, comp);
@@ -852,28 +725,20 @@ erange_dispatch(ForwardIter first, ForwardIter last,
 
 // erange_dispatch 的 random access iterator 版本
 template <class RandomIter, class T, class Compared>
-yastl::pair<RandomIter, RandomIter>
-erange_dispatch(RandomIter first, RandomIter last,
-                const T& value, random_access_iterator_tag, Compared comp)
-{
+yastl::pair<RandomIter, RandomIter> erange_dispatch(RandomIter first, RandomIter last,
+                                                    const T& value, random_access_iterator_tag, Compared comp) {
   auto len = last - first;
   auto half = len;
   RandomIter middle, left, right;
-  while (len > 0)
-  {
+  while (len > 0) {
     half = len >> 1;
     middle = first + half;
-    if (comp(*middle, value))
-    {
+    if (comp(*middle, value)) {
       first = middle + 1;
       len = len - half - 1;
-    }
-    else if (comp(value, *middle))
-    {
+    } else if (comp(value, *middle)) {
       len = half;
-    }
-    else
-    {
+    } else {
       left = yastl::lower_bound(first, middle, value, comp);
       right = yastl::upper_bound(++middle, first + len, value, comp);
       return yastl::pair<RandomIter, RandomIter>(left, right);
@@ -883,9 +748,7 @@ erange_dispatch(RandomIter first, RandomIter last,
 }
 
 template <class ForwardIter, class T, class Compared>
-yastl::pair<ForwardIter, ForwardIter>
-equal_range(ForwardIter first, ForwardIter last, const T& value, Compared comp)
-{
+yastl::pair<ForwardIter, ForwardIter> equal_range(ForwardIter first, ForwardIter last, const T& value, Compared comp) {
   return yastl::erange_dispatch(first, last, value, iterator_category(first), comp);
 }
 
@@ -894,10 +757,8 @@ equal_range(ForwardIter first, ForwardIter last, const T& value, Compared comp)
 // 将函数对象 gen 的运算结果对[first, last)内的每个元素赋值
 /*****************************************************************************************/
 template <class ForwardIter, class Generator>
-void generate(ForwardIter first, ForwardIter last, Generator gen)
-{
-  for (; first != last; ++first)
-  {
+void generate(ForwardIter first, ForwardIter last, Generator gen) {
+  for (; first != last; ++first) {
     *first = gen();
   }
 }
@@ -907,34 +768,24 @@ void generate(ForwardIter first, ForwardIter last, Generator gen)
 // 用函数对象 gen 连续对 n 个元素赋值
 /*****************************************************************************************/
 template <class ForwardIter, class Size, class Generator>
-void generate_n(ForwardIter first, Size n, Generator gen)
-{
-  for (; n > 0; --n, ++first)
-  {
+void generate_n(ForwardIter first, Size n, Generator gen) {
+  for (; n > 0; --n, ++first) {
     *first = gen();
   }
 }
 
 /*****************************************************************************************/
 // includes
-// 判断序列一S1 是否包含序列二S2
+// 判断序列一S1 是否包含序列二S2 序列需要有序
 /*****************************************************************************************/
 template <class InputIter1, class InputIter2>
-bool includes(InputIter1 first1, InputIter1 last1,
-              InputIter2 first2, InputIter2 last2)
-{
-  while (first1 != last1 && first2 != last2)
-  {
-    if (*first2 < *first1)
-    {
+bool includes(InputIter1 first1, InputIter1 last1, InputIter2 first2, InputIter2 last2) {
+  while (first1 != last1 && first2 != last2) {
+    if (*first2 < *first1) {
       return false;
-    }
-    else if (*first1 < *first2)
-    {
+    } else if (*first1 < *first2) {
       ++first1;
-    }
-    else
-    {
+    } else { // 相等
       ++first1, ++first2;
     }
   }
@@ -943,21 +794,13 @@ bool includes(InputIter1 first1, InputIter1 last1,
 
 // 重载版本使用函数对象 comp 代替比较操作
 template <class InputIter1, class InputIter2, class Compared>
-bool includes(InputIter1 first1, InputIter1 last1,
-              InputIter2 first2, InputIter2 last2, Compared comp)
-{
-  while (first1 != last1 && first2 != last2)
-  {
-    if (comp(*first2, *first1))
-    {
+bool includes(InputIter1 first1, InputIter1 last1, InputIter2 first2, InputIter2 last2, Compared comp) {
+  while (first1 != last1 && first2 != last2) {
+    if (comp(*first2, *first1)) {
       return false;
-    }
-    else if (comp(*first1, *first2))
-    {
+    } else if (comp(*first1, *first2)) {
       ++first1;
-    }
-    else
-    {
+    } else {
       ++first1, ++first2;
     }
   }
@@ -969,32 +812,32 @@ bool includes(InputIter1 first1, InputIter1 last1,
 // 检查[first, last)内的元素是否为一个堆，如果是，则返回 true
 /*****************************************************************************************/
 template <class RandomIter>
-bool is_heap(RandomIter first, RandomIter last)
-{
+bool is_heap(RandomIter first, RandomIter last) {
   auto n = yastl::distance(first, last);
   auto parent = 0;
-  for (auto child = 1; child < n; ++child)
-  {
-    if (first[parent] < first[child])
+  for (auto child = 1; child < n; ++child) {
+    if (first[parent] < first[child]) { // 默认是大顶堆 父亲比孩子小则失败
       return false;
-    if ((child & 1) == 0)
+    }
+    if ((child & 1) == 0) { // 是奇数，父亲加 1
       ++parent;
+    }
   }
   return true;
 }
 
 // 重载版本使用函数对象 comp 代替比较操作
 template <class RandomIter, class Compared>
-bool is_heap(RandomIter first, RandomIter last, Compared comp)
-{
+bool is_heap(RandomIter first, RandomIter last, Compared comp) {
   auto n = yastl::distance(first, last);
   auto parent = 0;
-  for (auto child = 1; child < n; ++child)
-  {
-    if (comp(first[parent], first[child]))
+  for (auto child = 1; child < n; ++child) {
+    if (comp(first[parent], first[child])) {
       return false;
-    if ((child & 1) == 0)
+    }
+    if ((child & 1) == 0) {
       ++parent;
+    }
   }
   return true;
 }
@@ -1004,32 +847,32 @@ bool is_heap(RandomIter first, RandomIter last, Compared comp)
 // 检查[first, last)内的元素是否升序，如果是升序，则返回 true
 /*****************************************************************************************/
 template <class ForwardIter>
-bool is_sorted(ForwardIter first, ForwardIter last)
-{
-  if (first == last)
+bool is_sorted(ForwardIter first, ForwardIter last) {
+  if (first == last) {
     return true;
+  }
   auto next = first;
   ++next;
-  for (; next != last; first = next, ++next)
-  {
-    if (*next < *first)
+  for (; next != last; first = next, ++next) {
+    if (*next < *first) {
       return false;
+    }
   }
   return true;
 }
 
 // 重载版本使用函数对象 comp 代替比较操作
 template <class ForwardIter, class Compared>
-bool is_sorted(ForwardIter first, ForwardIter last, Compared comp)
-{
-  if (first == last)
+bool is_sorted(ForwardIter first, ForwardIter last, Compared comp) {
+  if (first == last) {
     return true;
+  }
   auto next = first;
   ++next;
-  for (; next != last; first = next, ++next)
-  {
-    if (comp(*next, *first))
+  for (; next != last; first = next, ++next) {
+    if (comp(*next, *first)) {
       return false;
+    }
   }
   return true;
 }
@@ -1039,40 +882,42 @@ bool is_sorted(ForwardIter first, ForwardIter last, Compared comp)
 // 找出三个值的中间值
 /*****************************************************************************************/
 template <class T>
-const T& median(const T& left, const T& mid, const T& right)
-{
-  if (left < mid)
-    if (mid < right)        // left < mid < right
+const T& median(const T& left, const T& mid, const T& right) {
+  if (left < mid) {
+    if (mid < right) { // left < mid < right
       return mid;
-    else if (left < right)  // left < right <= mid
+    } else if (left < right) {  // left < right <= mid
       return right;
-    else                    // right <= left < mid
+    } else { // right <= left < mid
       return left;
-  else if (left < right)      // mid <= left < right
+    }
+  } else if (left < right) { // mid <= left < right
     return left;
-  else if (mid < right)       // mid < right <= left
+  } else if (mid < right) { // mid < right <= left
     return right;
-  else                        // right <= mid <= left
+  } else {  // right <= mid <= left
     return mid;
+  }
 }
 
 // 重载版本使用函数对象 comp 代替比较操作
 template <class T, class Compared>
-const T& median(const T& left, const T& mid, const T& right, Compared comp)
-{
-  if (comp(left, mid))
-    if (comp(mid, right))
+const T& median(const T& left, const T& mid, const T& right, Compared comp) {
+  if (comp(left, mid)) {
+    if (comp(mid, right)) {
       return mid;
-    else if (comp(left, right))
+    } else if (comp(left, right)) {
       return right;
-    else
+    } else {
       return left;
-  else if (comp(left, right))
+    }
+  } else if (comp(left, right)) {
     return left;
-  else if (comp(mid, right))
+  } else if (comp(mid, right)) {
     return right;
-  else
+  } else {
     return mid;
+  }
 }
 
 /*****************************************************************************************/
@@ -1080,30 +925,30 @@ const T& median(const T& left, const T& mid, const T& right, Compared comp)
 // 返回一个迭代器，指向序列中最大的元素
 /*****************************************************************************************/
 template <class ForwardIter>
-ForwardIter max_element(ForwardIter first, ForwardIter last)
-{
-  if (first == last)
+ForwardIter max_element(ForwardIter first, ForwardIter last) {
+  if (first == last) {
     return first;
+  }
   auto result = first;
-  while (++first != last)
-  {
-    if (*result < *first)
+  while (++first != last) {
+    if (*result < *first) {
       result = first;
+    }
   }
   return result;
 }
 
 // 重载版本使用函数对象 comp 代替比较操作
 template <class ForwardIter, class Compared>
-ForwardIter max_element(ForwardIter first, ForwardIter last, Compared comp)
-{
-  if (first == last)
+ForwardIter max_element(ForwardIter first, ForwardIter last, Compared comp) {
+  if (first == last) {
     return first;
+  }
   auto result = first;
-  while (++first != last)
-  {
-    if (comp(*result, *first))
+  while (++first != last) {
+    if (comp(*result, *first)) {
       result = first;
+    }
   }
   return result;
 }
@@ -1113,30 +958,30 @@ ForwardIter max_element(ForwardIter first, ForwardIter last, Compared comp)
 // 返回一个迭代器，指向序列中最小的元素
 /*****************************************************************************************/
 template <class ForwardIter>
-ForwardIter min_elememt(ForwardIter first, ForwardIter last)
-{
-  if (first == last)
+ForwardIter min_elememt(ForwardIter first, ForwardIter last) {
+  if (first == last) {
     return first;
+  }
   auto result = first;
-  while (++first != last)
-  {
-    if (*first < *result)
+  while (++first != last) {
+    if (*first < *result) {
       result = first;
+    }
   }
   return result;
 }
 
 // 重载版本使用函数对象 comp 代替比较操作
 template <class ForwardIter, class Compared>
-ForwardIter min_elememt(ForwardIter first, ForwardIter last, Compared comp)
-{
-  if (first == last)
+ForwardIter min_elememt(ForwardIter first, ForwardIter last, Compared comp) {
+  if (first == last) {
     return first;
+  }
   auto result = first;
-  while (++first != last)
-  {
-    if (comp(*first, *result))
+  while (++first != last) {
+    if (comp(*first, *result)) {
       result = first;
+    }
   }
   return result;
 }
@@ -1147,12 +992,8 @@ ForwardIter min_elememt(ForwardIter first, ForwardIter last, Compared comp)
 // 交换的区间长度必须相同，两个序列不能互相重叠，返回一个迭代器指向序列二最后一个被交换元素的下一位置
 /*****************************************************************************************/
 template <class ForwardIter1, class ForwardIter2>
-ForwardIter2
-swap_ranges(ForwardIter1 first1, ForwardIter1 last1,
-            ForwardIter2 first2)
-{
-  for (; first1 != last1; ++first1, ++first2)
-  {
+ForwardIter2 swap_ranges(ForwardIter1 first1, ForwardIter1 last1, ForwardIter2 first2) {
+  for (; first1 != last1; ++first1, ++first2) {
     yastl::iter_swap(first1, first2);
   }
   return first2;
@@ -1163,25 +1004,19 @@ swap_ranges(ForwardIter1 first1, ForwardIter1 last1,
 // 第一个版本以函数对象 unary_op 作用于[first, last)中的每个元素并将结果保存至 result 中
 // 第二个版本以函数对象 binary_op 作用于两个序列[first1, last1)、[first2, last2)的相同位置
 /*****************************************************************************************/
+// 一元操作符
 template <class InputIter, class OutputIter, class UnaryOperation>
-OutputIter
-transform(InputIter first, InputIter last,
-          OutputIter result, UnaryOperation unary_op)
-{
-  for (; first != last; ++first, ++result)
-  {
+OutputIter transform(InputIter first, InputIter last, OutputIter result, UnaryOperation unary_op) {
+  for (; first != last; ++first, ++result) {
     *result = unary_op(*first);
   }
   return result;
 }
 
+// 二元操作符
 template <class InputIter1, class InputIter2, class OutputIter, class BinaryOperation>
-OutputIter
-transform(InputIter1 first1, InputIter1 last1,
-          InputIter2 first2, OutputIter result, BinaryOperation binary_op)
-{
-  for (; first1 != last1; ++first1, ++first2, ++result)
-  {
+OutputIter transform(InputIter1 first1, InputIter1 last1, InputIter2 first2, OutputIter result, BinaryOperation binary_op) {
+  for (; first1 != last1; ++first1, ++first2, ++result) {
     *result = binary_op(*first1, *first2);
   }
   return result;
@@ -1192,13 +1027,9 @@ transform(InputIter1 first1, InputIter1 last1,
 // 移除区间内与指定 value 相等的元素，并将结果复制到以 result 标示起始位置的容器上
 /*****************************************************************************************/
 template <class InputIter, class OutputIter, class T>
-OutputIter
-remove_copy(InputIter first, InputIter last, OutputIter result, const T& value)
-{
-  for (; first != last; ++first)
-  {
-    if (*first != value)
-    {
+OutputIter remove_copy(InputIter first, InputIter last, OutputIter result, const T& value) {
+  for (; first != last; ++first) {
+    if (*first != value) {
       *result++ = *first;
     }
   }
@@ -1211,8 +1042,7 @@ remove_copy(InputIter first, InputIter last, OutputIter result, const T& value)
 // 并不从容器中删除这些元素，所以 remove 和 remove_if 不适用于 array
 /*****************************************************************************************/
 template <class ForwardIter, class T>
-ForwardIter remove(ForwardIter first, ForwardIter last, const T& value)
-{
+ForwardIter remove(ForwardIter first, ForwardIter last, const T& value) {
   first = yastl::find(first, last, value);  // 利用 find 找出第一个匹配的地方
   auto next = first;
   return first == last ? first : yastl::remove_copy(++next, last, first, value);
