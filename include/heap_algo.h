@@ -83,6 +83,7 @@ void adjust_heap(RandomIter first, Distance holeIndex, Distance len, T value) {
   yastl::push_heap_aux(first, holeIndex, topIndex, value);
 }
 
+// result 指针存放 first 的结果，之后 first 位置存放 value
 template <class RandomIter, class T, class Distance>
 void pop_heap_aux(RandomIter first, RandomIter last, RandomIter result, T value, Distance*) {
   // 先将首值调至尾节点，然后调整[first, last - 1)使之重新成为一个 max-heap
@@ -96,8 +97,8 @@ void pop_heap(RandomIter first, RandomIter last) {
 }
 
 // 重载版本使用函数对象 comp 代替比较操作 关键字heapify
-// 在holeindex位置插入value，但是会先调整holeindex的位置
-// 插入value的时候需要上滤
+// 在 holeindex 位置插入 value，但是会先调整 holeindex 的位置
+// 插入 value 的时候需要上滤
 template <class RandomIter, class T, class Distance, class Compared>
 void adjust_heap(RandomIter first, Distance holeIndex, Distance len, T value, Compared comp) {
   // 先进行下溯(percolate down)过程
@@ -119,6 +120,7 @@ void adjust_heap(RandomIter first, Distance holeIndex, Distance len, T value, Co
   yastl::push_heap_aux(first, holeIndex, topIndex, value, comp);
 }
 
+// 把 first 值存入 result 之后 heapify
 template <class RandomIter, class T, class Distance, class Compared>
 void pop_heap_aux(RandomIter first, RandomIter last, RandomIter result, T value, Distance*, Compared comp) {
   *result = *first;  // 先将尾指设置成首值，即尾指为欲求结果
@@ -155,8 +157,7 @@ void sort_heap(RandomIter first, RandomIter last, Compared comp) {
 // 该函数接受两个迭代器，表示 heap 容器的首尾，把容器内的数据变为一个 heap
 /*****************************************************************************************/
 template <class RandomIter, class Distance>
-void make_heap_aux(RandomIter first, RandomIter last, Distance*)
-{
+void make_heap_aux(RandomIter first, RandomIter last, Distance*) {
   if (last - first < 2)
     return;
   auto len = last - first;

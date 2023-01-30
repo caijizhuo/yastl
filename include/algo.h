@@ -1053,14 +1053,9 @@ ForwardIter remove(ForwardIter first, ForwardIter last, const T& value) {
 // 移除区间内所有令一元操作 unary_pred 为 true 的元素，并将结果复制到以 result 为起始位置的容器上
 /*****************************************************************************************/
 template <class InputIter, class OutputIter, class UnaryPredicate>
-OutputIter
-remove_copy_if(InputIter first, InputIter last,
-               OutputIter result, UnaryPredicate unary_pred)
-{
-  for (; first != last; ++first)
-  {
-    if (!unary_pred(*first))
-    {
+OutputIter remove_copy_if(InputIter first, InputIter last, OutputIter result, UnaryPredicate unary_pred) {
+  for (; first != last; ++first) {
+    if (!unary_pred(*first)) {
       *result = *first;
       ++result;
     }
@@ -1073,9 +1068,7 @@ remove_copy_if(InputIter first, InputIter last,
 // 移除区间内所有令一元操作 unary_pred 为 true 的元素
 /*****************************************************************************************/
 template <class ForwardIter, class UnaryPredicate>
-ForwardIter
-remove_if(ForwardIter first, ForwardIter last, UnaryPredicate unary_pred)
-{
+ForwardIter remove_if(ForwardIter first, ForwardIter last, UnaryPredicate unary_pred) {
   first = yastl::find_if(first, last, unary_pred);  // 利用 find_if 找出第一个匹配的地方
   auto next = first;
   return first == last ? first : yastl::remove_copy_if(++next, last, first, unary_pred);
@@ -1086,13 +1079,11 @@ remove_if(ForwardIter first, ForwardIter last, UnaryPredicate unary_pred)
 // 将区间内所有的 old_value 都以 new_value 替代
 /*****************************************************************************************/
 template <class ForwardIter, class T>
-void replace(ForwardIter first, ForwardIter last,
-             const T& old_value, const T& new_value)
-{
-  for (; first != last; ++first)
-  {
-    if (*first == old_value)
+void replace(ForwardIter first, ForwardIter last, const T& old_value, const T& new_value) {
+  for (; first != last; ++first) {
+    if (*first == old_value) {
       *first = new_value;
+    }
   }
 }
 
@@ -1101,12 +1092,8 @@ void replace(ForwardIter first, ForwardIter last,
 // 行为与 replace 类似，不同的是将结果复制到 result 所指的容器中，原序列没有改变
 /*****************************************************************************************/
 template <class InputIter, class OutputIter, class T>
-OutputIter
-replace_copy(InputIter first, InputIter last,
-             OutputIter result, const T& old_value, const T& new_value)
-{
-  for (; first != last; ++first, ++result)
-  {
+OutputIter replace_copy(InputIter first, InputIter last, OutputIter result, const T& old_value, const T& new_value) {
+  for (; first != last; ++first, ++result) {
     *result = *first == old_value ? new_value : *first;
   }
   return result;
@@ -1117,12 +1104,9 @@ replace_copy(InputIter first, InputIter last,
 // 行为与 replace_if 类似，不同的是将结果复制到 result 所指的容器中，原序列没有改变
 /*****************************************************************************************/
 template <class InputIter, class OutputIter, class UnaryPredicate, class T>
-OutputIter
-replace_copy_if(InputIter first, InputIter last,
-                OutputIter result, UnaryPredicate unary_pred, const T& new_value)
-{
-  for (; first != last; ++first, ++result)
-  {
+OutputIter replace_copy_if(InputIter first, InputIter last, OutputIter result, UnaryPredicate unary_pred, 
+                           const T& new_value) {
+  for (; first != last; ++first, ++result) {
     *result = unary_pred(*first) ? new_value : *first;
   }
   return result;
@@ -1133,13 +1117,11 @@ replace_copy_if(InputIter first, InputIter last,
 // 将区间内所有令一元操作 unary_pred 为 true 的元素都用 new_value 替代
 /*****************************************************************************************/
 template <class ForwardIter, class UnaryPredicate, class T>
-void replace_if(ForwardIter first, ForwardIter last,
-                UnaryPredicate unary_pred, const T& new_value)
-{
-  for (; first != last; ++first)
-  {
-    if (unary_pred(*first))
+void replace_if(ForwardIter first, ForwardIter last, UnaryPredicate unary_pred, const T& new_value) {
+  for (; first != last; ++first) {
+    if (unary_pred(*first)) {
       *first = new_value;
+    }
   }
 }
 
@@ -1177,12 +1159,8 @@ void reverse(BidirectionalIter first, BidirectionalIter last) {
 // 行为与 reverse 类似，不同的是将结果复制到 result 所指容器中
 /*****************************************************************************************/
 template <class BidirectionalIter, class OutputIter>
-OutputIter
-reverse_copy(BidirectionalIter first, BidirectionalIter last,
-             OutputIter result)
-{
-  while (first != last)
-  {
+OutputIter reverse_copy(BidirectionalIter first, BidirectionalIter last, OutputIter result) {
+  while (first != last) {
     --last;
     *result = *last;
     ++result;
@@ -1196,27 +1174,24 @@ reverse_copy(BidirectionalIter first, BidirectionalIter last,
 // 重载版本使用一个产生随机数的函数对象 rand
 /*****************************************************************************************/
 template <class RandomIter>
-void random_shuffle(RandomIter first, RandomIter last)
-{
-  if (first == last)
+void random_shuffle(RandomIter first, RandomIter last) {
+  if (first == last) {
     return;
+  }
   srand((unsigned)time(0));
-  for (auto i = first + 1; i != last; ++i)
-  {
+  for (auto i = first + 1; i != last; ++i) {
     yastl::iter_swap(i, first + (rand() % (i - first + 1)));
   }
 }
 
 // 重载版本使用一个产生随机数的函数对象 rand
 template <class RandomIter, class RandomNumberGenerator>
-void random_shuffle(RandomIter first, RandomIter last,
-                    RandomNumberGenerator& rand)
-{
-  if (first == last)
+void random_shuffle(RandomIter first, RandomIter last, RandomNumberGenerator& rand) {
+  if (first == last) {
     return;
+  }
   auto len = yastl::distance(first, last);
-  for (auto i = first + 1; i != last; ++i)
-  {
+  for (auto i = first + 1; i != last; ++i) {
     yastl::iter_swap(i, first + (rand(i - first + 1) % len));
   }
 }
@@ -1228,29 +1203,22 @@ void random_shuffle(RandomIter first, RandomIter last,
 /*****************************************************************************************/
 // rotate_dispatch 的 forward_iterator_tag 版本
 template <class ForwardIter>
-ForwardIter
-rotate_dispatch(ForwardIter first, ForwardIter middle,
-                ForwardIter last, forward_iterator_tag)
-{
+ForwardIter rotate_dispatch(ForwardIter first, ForwardIter middle, ForwardIter last, forward_iterator_tag) {
   auto first2 = middle;
-  do
-  {
+  do {
     yastl::swap(*first++, *first2++);
-    if (first == middle)
+    if (first == middle) { // 前半段到头了
       middle = first2;
+    }
   } while (first2 != last);  // 后半段移到前面
 
   auto new_middle = first;   // 迭代器返回的位置
   first2 = middle;
-  while (first2 != last)
-  {   // 调整剩余元素
+  while (first2 != last) {   // 调整剩余元素
     yastl::swap(*first++, *first2++);
-    if (first == middle)
-    {
+    if (first == middle) {
       middle = first2;
-    }
-    else if (first2 == last)
-    {
+    } else if (first2 == last) {
       first2 = middle;
     }
   }
@@ -1259,21 +1227,17 @@ rotate_dispatch(ForwardIter first, ForwardIter middle,
 
 // rotate_dispatch 的 bidirectional_iterator_tag 版本
 template <class BidirectionalIter>
-BidirectionalIter
-rotate_dispatch(BidirectionalIter first, BidirectionalIter middle,
-                BidirectionalIter last, bidirectional_iterator_tag)
-{
+BidirectionalIter rotate_dispatch(BidirectionalIter first, BidirectionalIter middle,
+                                  BidirectionalIter last, bidirectional_iterator_tag) {
   yastl::reverse_dispatch(first, middle, bidirectional_iterator_tag());
   yastl::reverse_dispatch(middle, last, bidirectional_iterator_tag());
-  while (first != middle && middle != last)
-    yastl::swap(*first++, *--last);
-  if (first == middle)
-  {
+  while (first != middle && middle != last) {
+    yastl::swap(*first++, *--last); // 从两边向中间交换
+  }
+  if (first == middle) {
     yastl::reverse_dispatch(middle, last, bidirectional_iterator_tag());
     return last;
-  }
-  else
-  {
+  } else {
     yastl::reverse_dispatch(first, middle, bidirectional_iterator_tag());
     return first;
   }
@@ -1281,10 +1245,8 @@ rotate_dispatch(BidirectionalIter first, BidirectionalIter middle,
 
 // 求最大公因子
 template <class EuclideanRingElement>
-EuclideanRingElement rgcd(EuclideanRingElement m, EuclideanRingElement n)
-{
-  while (n != 0)
-  {
+EuclideanRingElement rgcd(EuclideanRingElement m, EuclideanRingElement n) {
+  while (n != 0) { // 欧几里得辗转相除法
     auto t = m % n;
     m = n;
     n = t;
@@ -1294,44 +1256,32 @@ EuclideanRingElement rgcd(EuclideanRingElement m, EuclideanRingElement n)
 
 // rotate_dispatch 的 random_access_iterator_tag 版本
 template <class RandomIter>
-RandomIter
-rotate_dispatch(RandomIter first, RandomIter middle,
-                RandomIter last, random_access_iterator_tag)
-{
+RandomIter rotate_dispatch(RandomIter first, RandomIter middle, RandomIter last, random_access_iterator_tag) {
   // 因为是 random access iterator，我们可以确定每个元素的位置
   auto n = last - first;
   auto l = middle - first;
   auto r = n - l;
   auto result = first + (last - middle);
-  if (l == r)
-  {
+  if (l == r) {
     yastl::swap_ranges(first, middle, middle);
     return result;
   }
   auto cycle_times = rgcd(n, l);
-  for (auto i = 0; i < cycle_times; ++i)
-  {
+  for (auto i = 0; i < cycle_times; ++i) {
     auto tmp = *first;
     auto p = first;
-    if (l < r)
-    {
-      for (auto j = 0; j < r / cycle_times; ++j)
-      {
-        if (p > first + r)
-        {
+    if (l < r) {
+      for (auto j = 0; j < r / cycle_times; ++j) {
+        if (p > first + r) {
           *p = *(p - r);
           p -= r;
         }
         *p = *(p + l);
         p += l;
       }
-    }
-    else
-    {
-      for (auto j = 0; j < l / cycle_times - 1; ++j)
-      {
-        if (p < last - l)
-        {
+    } else {
+      for (auto j = 0; j < l / cycle_times - 1; ++j) {
+        if (p < last - l) {
           *p = *(p + l);
           p += l;
         }
@@ -1345,14 +1295,17 @@ rotate_dispatch(RandomIter first, RandomIter middle,
   return result;
 }
 
+// rotate
+// 将[first, middle)内的元素和 [middle, last)内的元素互换，可以交换两个长度不同的区间
+// 返回交换后 middle 的位置
 template <class ForwardIter>
-ForwardIter
-rotate(ForwardIter first, ForwardIter middle, ForwardIter last)
-{
-  if (first == middle)
+ForwardIter rotate(ForwardIter first, ForwardIter middle, ForwardIter last) {
+  if (first == middle){
     return last;
-  if (middle == last)
+  }
+  if (middle == last) {
     return first;
+  }
   return yastl::rotate_dispatch(first, middle, last, iterator_category(first));
 }
 
@@ -1361,88 +1314,82 @@ rotate(ForwardIter first, ForwardIter middle, ForwardIter last)
 // 行为与 rotate 类似，不同的是将结果复制到 result 所指的容器中
 /*****************************************************************************************/
 template <class ForwardIter, class OutputIter>
-ForwardIter
-rotate_copy(ForwardIter first, ForwardIter middle,
-            ForwardIter last, OutputIter result)
-{
+ForwardIter rotate_copy(ForwardIter first, ForwardIter middle, ForwardIter last, OutputIter result) {
   return yastl::copy(first, middle, yastl::copy(middle, last, result));
 }
 
 /*****************************************************************************************/
 // is_permutation
-// 判断[first1,last1)是否为[first2, last2)的排列组合
+// 判断 [first1,last1) 是否为 [first2, last2) 的排列组合
 /*****************************************************************************************/
 template <class ForwardIter1, class ForwardIter2, class BinaryPred>
 bool is_permutation_aux(ForwardIter1 first1, ForwardIter1 last1,
                         ForwardIter2 first2, ForwardIter2 last2,
-                        BinaryPred pred)
-{
+                        BinaryPred pred) {
   constexpr bool is_ra_it = yastl::is_random_access_iterator<ForwardIter1>::value
     && yastl::is_random_access_iterator<ForwardIter2>::value;
-  if (is_ra_it)
-  {
+  if (is_ra_it) {
     auto len1 = last1 - first1;
     auto len2 = last2 - first2;
-    if (len1 != len2)
+    if (len1 != len2) { // 长度不相等一定不是
       return false;
+    }
   }
 
   // 先找出相同的前缀段
-  for (; first1 != last1 && first2 != last2; ++first1, (void) ++first2)
-  {
-    if (!pred(*first1, *first2))
+  for (; first1 != last1 && first2 != last2; ++first1, (void) ++first2) {
+    if (!pred(*first1, *first2)) {
       break;
+    }
   }
-  if (is_ra_it)
-  {
-    if (first1 == last1)
+  if (is_ra_it) {
+    if (first1 == last1) { // 区间1 和 区间2 完全一样
       return true;
-  }
-  else
-  {
+    }
+  } else {
     auto len1 = yastl::distance(first1, last1);
     auto len2 = yastl::distance(first2, last2);
-    if (len1 == 0 && len2 == 0)
+    if (len1 == 0 && len2 == 0) {
       return true;
-    if (len1 != len2)
-      return false;
+    }
+    if (len1 != len2) {
+      return false; // 长度不相等
+    }
   }
 
   // 判断剩余部分
-  for (auto i = first1; i != last1; ++i)
-  {
+  for (auto i = first1; i != last1; ++i) {
     bool is_repeated = false;
-    for (auto j = first1; j != i; ++j)
-    {
-      if (pred(*j, *i))
-      {
+    for (auto j = first1; j != i; ++j) { // 到 i 为止，区间内是否有和 *i 重复的元素
+      if (pred(*j, *i)) {
         is_repeated = true;
         break;
       }
     }
 
-    if (!is_repeated)
-    {
+    if (!is_repeated) {
       // 计算 *i 在 [first2, last2) 的数目
       auto c2 = 0;
-      for (auto j = first2; j != last2; ++j)
-      {
-        if (pred(*i, *j))
+      for (auto j = first2; j != last2; ++j) {
+        if (pred(*i, *j)) {
           ++c2;
+        }
       }
-      if (c2 == 0)
+      if (c2 == 0) { // 区间2 内没有 *i 一定不是排列组合
         return false;
+      }
 
       // 计算 *i 在 [first1, last1) 的数目
       auto c1 = 1;
       auto j = i;
-      for (++j; j != last1; ++j)
-      {
-        if (pred(*i, *j))
+      for (++j; j != last1; ++j) {
+        if (pred(*i, *j)) {
           ++c1;
+        }
       }
-      if (c1 != c2)
+      if (c1 != c2) { // 两区间某元素个数不等
         return false;
+      }
     }
   }
   return true;
@@ -1468,24 +1415,22 @@ bool is_permutation(ForwardIter1 first1, ForwardIter1 last1, ForwardIter2 first2
 // 取得[first, last)所标示序列的下一个排列组合，如果没有下一个排序组合，返回 false，否则返回 true
 /*****************************************************************************************/
 template <class BidirectionalIter>
-bool next_permutation(BidirectionalIter first, BidirectionalIter last)
-{
+bool next_permutation(BidirectionalIter first, BidirectionalIter last) {
   auto i = last;
-  if (first == last || first == --i)
+  if (first == last || first == --i) { // 0 个元素或者 1 个元素
     return false;
-  for (;;)
-  {
+  }
+  for (;;) {
     auto ii = i;
-    if (*--i < *ii)
-    {                 // 找到第一对小于关系的元素
+    if (*--i < *ii) {                 // 向前找到第一对小于关系的元素
       auto j = last;
       while (!(*i < *--j)) {}
+
       yastl::iter_swap(i, j);       // 交换 i，j 所指元素
       yastl::reverse(ii, last);     // 将 ii 之后的所有元素反转
       return true;
     }
-    if (i == first)
-    {
+    if (i == first) { // 排列组合已经到头了 回环
       yastl::reverse(first, last);
       return false;
     }
@@ -1494,24 +1439,21 @@ bool next_permutation(BidirectionalIter first, BidirectionalIter last)
 
 // 重载版本使用函数对象 comp 代替比较操作
 template <class BidirectionalIter, class Compared>
-bool next_permutation(BidirectionalIter first, BidirectionalIter last, Compared comp)
-{
+bool next_permutation(BidirectionalIter first, BidirectionalIter last, Compared comp) {
   auto i = last;
-  if (first == last || first == --i)
+  if (first == last || first == --i) {
     return false;
-  for (;;)
-  {
+  }
+  for (;;) {
     auto ii = i;
-    if (comp(*--i, *ii))
-    {
+    if (comp(*--i, *ii)) {
       auto j = last;
       while (!comp(*i, *--j)) {}
       yastl::iter_swap(i, j);       // 交换 i，j 所指元素
       yastl::reverse(ii, last);     // 将 ii 之后的所有元素反转
       return true;
     }
-    if (i == first)
-    {
+    if (i == first) {
       yastl::reverse(first, last);
       return false;
     }
@@ -1523,24 +1465,21 @@ bool next_permutation(BidirectionalIter first, BidirectionalIter last, Compared 
 // 取得[first, last)所标示序列的上一个排列组合，如果没有上一个排序组合，返回 false，否则返回 true
 /*****************************************************************************************/
 template <class BidirectionalIter>
-bool prev_permutation(BidirectionalIter first, BidirectionalIter last)
-{
+bool prev_permutation(BidirectionalIter first, BidirectionalIter last) {
   auto i = last;
-  if (first == last || first == --i)
+  if (first == last || first == --i) {
     return false;
-  for (;;)
-  {
+  }
+  for (;;) {
     auto ii = i;
-    if (*ii < *--i)
-    {                 // 找到第一对大于关系的元素
+    if (*ii < *--i) {                 // 找到第一对大于关系的元素
       auto j = last;
       while (!(*--j < *i)) {}
       yastl::iter_swap(i, j);       // 交换i，j
       yastl::reverse(ii, last);     // 将 ii 之后的所有元素反转
       return true;
     }
-    if (i == first)
-    {
+    if (i == first) {
       yastl::reverse(first, last);
       return false;
     }
@@ -1549,24 +1488,21 @@ bool prev_permutation(BidirectionalIter first, BidirectionalIter last)
 
 // 重载版本使用函数对象 comp 代替比较操作
 template <class BidirectionalIter, class Compared>
-bool prev_permutation(BidirectionalIter first, BidirectionalIter last, Compared comp)
-{
+bool prev_permutation(BidirectionalIter first, BidirectionalIter last, Compared comp) {
   auto i = last;
-  if (first == last || first == --i)
+  if (first == last || first == --i) {
     return false;
-  for (;;)
-  {
+  }
+  for (;;) {
     auto ii = i;
-    if (comp(*ii, *--i))
-    {
+    if (comp(*ii, *--i)) {
       auto j = last;
       while (!comp(*--j, *i)) {}
       yastl::iter_swap(i, j);       // 交换i，j
       yastl::reverse(ii, last);     // 将 ii 之后的所有元素反转
       return true;
     }
-    if (i == first)
-    {
+    if (i == first) {
       yastl::reverse(first, last);
       return false;
     }
@@ -1578,20 +1514,12 @@ bool prev_permutation(BidirectionalIter first, BidirectionalIter last, Compared 
 // 将两个经过排序的集合 S1 和 S2 合并起来置于另一段空间，返回一个迭代器指向最后一个元素的下一位置
 /*****************************************************************************************/
 template <class InputIter1, class InputIter2, class OutputIter>
-OutputIter
-merge(InputIter1 first1, InputIter1 last1,
-      InputIter2 first2, InputIter2 last2,
-      OutputIter result)
-{
-  while (first1 != last1 && first2 != last2)
-  {
-    if (*first2 < *first1)
-    {
+OutputIter merge(InputIter1 first1, InputIter1 last1, InputIter2 first2, InputIter2 last2, OutputIter result) {
+  while (first1 != last1 && first2 != last2) {
+    if (*first2 < *first1) { // 2小 放2的
       *result = *first2;
       ++first2;
-    }
-    else
-    {
+    } else { // 1小或者相等，放1的
       *result = *first1;
       ++first1;
     }
@@ -1602,20 +1530,13 @@ merge(InputIter1 first1, InputIter1 last1,
 
 // 重载版本使用函数对象 comp 代替比较操作
 template <class InputIter1, class InputIter2, class OutputIter, class Compared>
-OutputIter
-merge(InputIter1 first1, InputIter1 last1,
-      InputIter2 first2, InputIter2 last2,
-      OutputIter result, Compared comp)
-{
-  while (first1 != last1 && first2 != last2)
-  {
-    if (comp(*first2, *first1))
-    {
+OutputIter merge(InputIter1 first1, InputIter1 last1, InputIter2 first2, InputIter2 last2,
+                 OutputIter result, Compared comp) {
+  while (first1 != last1 && first2 != last2) {
+    if (comp(*first2, *first1)) {
       *result = *first2;
       ++first2;
-    }
-    else
-    {
+    } else {
       *result = *first1;
       ++first1;
     }
@@ -1631,29 +1552,26 @@ merge(InputIter1 first1, InputIter1 last1,
 // 没有缓冲区的情况下合并
 template <class BidirectionalIter, class Distance>
 void merge_without_buffer(BidirectionalIter first, BidirectionalIter middle,
-                          BidirectionalIter last, Distance len1, Distance len2)
-{
-  if (len1 == 0 || len2 == 0)
+                          BidirectionalIter last, Distance len1, Distance len2) {
+  if (len1 == 0 || len2 == 0) {
     return;
-  if (len1 + len2 == 2)
-  {
-    if (*middle < *first)
+  }
+  if (len1 + len2 == 2) {
+    if (*middle < *first) {
       yastl::iter_swap(first, middle);
+    }
     return;
   }
   auto first_cut = first;
   auto second_cut = middle;
   Distance len11 = 0;
   Distance len22 = 0;
-  if (len1 > len2)
-  {  // 序列一较长，找到序列一的中点
+  if (len1 > len2) {  // 序列一较长，找到序列一的中点
     len11 = len1 >> 1;
     yastl::advance(first_cut, len11);
     second_cut = yastl::lower_bound(middle, last, *first_cut);
     len22 = yastl::distance(middle, second_cut);
-  }
-  else
-  {              // 序列二较长，找到序列二的中点
+  } else {              // 序列二较长，找到序列二的中点
     len22 = len2 >> 1;
     yastl::advance(second_cut, len22);
     first_cut = yastl::upper_bound(first, middle, *second_cut);
@@ -1665,28 +1583,25 @@ void merge_without_buffer(BidirectionalIter first, BidirectionalIter middle,
 }
 
 template <class BidirectionalIter1, class BidirectionalIter2>
-BidirectionalIter1
-merge_backward(BidirectionalIter1 first1, BidirectionalIter1 last1,
-               BidirectionalIter2 first2, BidirectionalIter2 last2,
-               BidirectionalIter1 result)
-{
-  if (first1 == last1)
+BidirectionalIter1 merge_backward(BidirectionalIter1 first1, BidirectionalIter1 last1,
+                                  BidirectionalIter2 first2, BidirectionalIter2 last2,
+                                  BidirectionalIter1 result) {
+  if (first1 == last1) {
     return yastl::copy_backward(first2, last2, result);
-  if (first2 == last2)
+  }
+  if (first2 == last2) {
     return yastl::copy_backward(first1, last1, result);
+  }
   --last1;
   --last2;
-  while (true)
-  {
-    if (*last2 < *last1)
-    {
+  while (true) {
+    if (*last2 < *last1) {
       *--result = *last1;
-      if (first1 == last1)
+      if (first1 == last1) {
         return yastl::copy_backward(first2, ++last2, result);
+      }
       --last1;
-    }
-    else
-    {
+    } else {
       *--result = *last2;
       if (first2 == last2)
         return yastl::copy_backward(first1, ++last1, result);
@@ -1695,27 +1610,21 @@ merge_backward(BidirectionalIter1 first1, BidirectionalIter1 last1,
   }
 }
 
+// 有buffer 的 rotate
 template <class BidirectionalIter1, class BidirectionalIter2, class Distance>
-BidirectionalIter1
-rotate_adaptive(BidirectionalIter1 first, BidirectionalIter1 middle,
-                BidirectionalIter1 last, Distance len1, Distance len2,
-                BidirectionalIter2 buffer, Distance buffer_size)
-{
+BidirectionalIter1 rotate_adaptive(BidirectionalIter1 first, BidirectionalIter1 middle,
+                                   BidirectionalIter1 last, Distance len1, Distance len2,
+                                   BidirectionalIter2 buffer, Distance buffer_size) {
   BidirectionalIter2 buffer_end;
-  if (len1 > len2 && len2 <= buffer_size)
-  {
+  if (len1 > len2 && len2 <= buffer_size) {
     buffer_end = yastl::copy(middle, last, buffer);
     yastl::copy_backward(first, middle, last);
     return yastl::copy(buffer, buffer_end, first);
-  }
-  else if (len1 <= buffer_size)
-  {
+  } else if (len1 <= buffer_size) {
     buffer_end = yastl::copy(first, middle, buffer);
     yastl::copy(middle, last, first);
     return yastl::copy_backward(buffer, buffer_end, last);
-  }
-  else
-  {
+  } else {
     return yastl::rotate(first, middle, last);
   }
 }
@@ -1724,34 +1633,25 @@ rotate_adaptive(BidirectionalIter1 first, BidirectionalIter1 middle,
 template <class BidirectionalIter, class Distance, class Pointer>
 void merge_adaptive(BidirectionalIter first, BidirectionalIter middle,
                     BidirectionalIter last, Distance len1, Distance len2,
-                    Pointer buffer, Distance buffer_size)
-{
+                    Pointer buffer, Distance buffer_size) {
   // 区间长度足够放进缓冲区
-  if (len1 <= len2 && len1 <= buffer_size)
-  {
+  if (len1 <= len2 && len1 <= buffer_size) {
     Pointer buffer_end = yastl::copy(first, middle, buffer);
     yastl::merge(buffer, buffer_end, middle, last, first);
-  }
-  else if (len2 <= buffer_size)
-  {
+  } else if (len2 <= buffer_size) {
     Pointer buffer_end = yastl::copy(middle, last, buffer);
     yastl::merge_backward(first, middle, buffer, buffer_end, last);
-  }
-  else
-  {  // 区间长度太长，分割递归处理
+  } else {  // 区间长度太长，分割递归处理
     auto first_cut = first;
     auto second_cut = middle;
     Distance len11 = 0;
     Distance len22 = 0;
-    if (len1 > len2)
-    {
+    if (len1 > len2) {
       len11 = len1 >> 1;
       yastl::advance(first_cut, len11);
       second_cut = yastl::lower_bound(middle, last, *first_cut);
       len22 = yastl::distance(middle, second_cut);
-    }
-    else
-    {
+    } else {
       len22 = len2 >> 1;
       yastl::advance(second_cut, len22);
       first_cut = yastl::upper_bound(first, middle, *second_cut);
@@ -1765,31 +1665,25 @@ void merge_adaptive(BidirectionalIter first, BidirectionalIter middle,
   }
 }
 
+// 原地 merge?
 template <class BidirectionalIter, class T>
-void
-inplace_merge_aux(BidirectionalIter first, BidirectionalIter middle,
-                  BidirectionalIter last, T*)
+void inplace_merge_aux(BidirectionalIter first, BidirectionalIter middle, BidirectionalIter last, T*)
 {
   auto len1 = yastl::distance(first, middle);
   auto len2 = yastl::distance(middle, last);
   temporary_buffer<BidirectionalIter, T> buf(first, last);
-  if (!buf.begin())
-  {
+  if (!buf.begin()) {
     yastl::merge_without_buffer(first, middle, last, len1, len2);
-  }
-  else
-  {
+  } else {
     yastl::merge_adaptive(first, middle, last, len1, len2, buf.begin(), buf.size());
   }
 }
 
 template <class BidirectionalIter>
-void
-inplace_merge(BidirectionalIter first, BidirectionalIter middle,
-              BidirectionalIter last)
-{
-  if (first == middle || middle == last)
+void inplace_merge(BidirectionalIter first, BidirectionalIter middle, BidirectionalIter last) {
+  if (first == middle || middle == last) {
     return;
+  }
   yastl::inplace_merge_aux(first, middle, last, value_type(first));
 }
 
@@ -1798,29 +1692,26 @@ inplace_merge(BidirectionalIter first, BidirectionalIter middle,
 template <class BidirectionalIter, class Distance, class Compared>
 void merge_without_buffer(BidirectionalIter first, BidirectionalIter middle,
                           BidirectionalIter last, Distance len1, Distance len2,
-                          Compared comp)
-{
-  if (len1 == 0 || len2 == 0)
+                          Compared comp) {
+  if (len1 == 0 || len2 == 0) {
     return;
-  if (len1 + len2 == 2)
-  {
-    if (comp(*middle, *first))
+  }
+  if (len1 + len2 == 2) {
+    if (comp(*middle, *first)) {
       yastl::iter_swap(first, middle);
+    }
     return;
   }
   auto first_cut = first;
   auto second_cut = middle;
   Distance len11 = 0;
   Distance len22 = 0;
-  if (len1 > len2)
-  {
+  if (len1 > len2) {
     len11 = len1 >> 1;
     yastl::advance(first_cut, len11);
     second_cut = yastl::lower_bound(middle, last, *first_cut, comp);
     len22 = yastl::distance(middle, second_cut);
-  }
-  else
-  {
+  } else {
     len22 = len2 >> 1;
     yastl::advance(second_cut, len22);
     first_cut = yastl::upper_bound(first, middle, *second_cut, comp);
@@ -1832,31 +1723,29 @@ void merge_without_buffer(BidirectionalIter first, BidirectionalIter middle,
 }
 
 template <class BidirectionalIter1, class BidirectionalIter2, class Compared>
-BidirectionalIter1
-merge_backward(BidirectionalIter1 first1, BidirectionalIter1 last1,
-               BidirectionalIter2 first2, BidirectionalIter2 last2,
-               BidirectionalIter1 result, Compared comp)
-{
-  if (first1 == last1)
+BidirectionalIter1 merge_backward(BidirectionalIter1 first1, BidirectionalIter1 last1,
+                                  BidirectionalIter2 first2, BidirectionalIter2 last2,
+                                  BidirectionalIter1 result, Compared comp) {
+  if (first1 == last1) {
     return yastl::copy_backward(first2, last2, result);
-  if (first2 == last2)
+  }
+  if (first2 == last2) {
     return yastl::copy_backward(first1, last1, result);
+  }
   --last1;
   --last2;
-  while (true)
-  {
-    if (comp(*last2, *last1))
-    {
+  while (true) {
+    if (comp(*last2, *last1)) {
       *--result = *last1;
-      if (first1 == last1)
+      if (first1 == last1) {
         return yastl::copy_backward(first2, ++last2, result);
+      }
       --last1;
-    }
-    else
-    {
+    } else {
       *--result = *last2;
-      if (first2 == last2)
+      if (first2 == last2) {
         return yastl::copy_backward(first1, ++last1, result);
+      }
       --last2;
     }
   }
@@ -1866,34 +1755,25 @@ merge_backward(BidirectionalIter1 first1, BidirectionalIter1 last1,
 template <class BidirectionalIter, class Distance, class Pointer, class Compared>
 void merge_adaptive(BidirectionalIter first, BidirectionalIter middle,
                     BidirectionalIter last, Distance len1, Distance len2,
-                    Pointer buffer, Distance buffer_size, Compared comp)
-{
+                    Pointer buffer, Distance buffer_size, Compared comp) {
   // 区间长度足够放进缓冲区
-  if (len1 <= len2 && len1 <= buffer_size)
-  {
+  if (len1 <= len2 && len1 <= buffer_size) {
     Pointer buffer_end = yastl::copy(first, middle, buffer);
     yastl::merge(buffer, buffer_end, middle, last, first, comp);
-  }
-  else if (len2 <= buffer_size)
-  {
+  } else if (len2 <= buffer_size) {
     Pointer buffer_end = yastl::copy(middle, last, buffer);
     yastl::merge_backward(first, middle, buffer, buffer_end, last, comp);
-  }
-  else
-  {  // 区间长度太长，分割递归处理
+  } else {  // 区间长度太长，分割递归处理
     auto first_cut = first;
     auto second_cut = middle;
     Distance len11 = 0;
     Distance len22 = 0;
-    if (len1 > len2)
-    {
+    if (len1 > len2) {
       len11 = len1 >> 1;
       yastl::advance(first_cut, len11);
       second_cut = yastl::lower_bound(middle, last, *first_cut, comp);
       len22 = yastl::distance(middle, second_cut);
-    }
-    else
-    {
+    } else {
       len22 = len2 >> 1;
       yastl::advance(second_cut, len22);
       first_cut = yastl::upper_bound(first, middle, *second_cut, comp);
@@ -1909,30 +1789,22 @@ void merge_adaptive(BidirectionalIter first, BidirectionalIter middle,
 }
 
 template <class BidirectionalIter, class T, class Compared>
-void
-inplace_merge_aux(BidirectionalIter first, BidirectionalIter middle,
-                  BidirectionalIter last, T*, Compared comp)
-{
+void inplace_merge_aux(BidirectionalIter first, BidirectionalIter middle, BidirectionalIter last, T*, Compared comp) {
   auto len1 = yastl::distance(first, middle);
   auto len2 = yastl::distance(middle, last);
   temporary_buffer<BidirectionalIter, T> buf(first, last);
-  if (!buf.begin())
-  {
+  if (!buf.begin()) {
     yastl::merge_without_buffer(first, middle, last, len1, len2, comp);
-  }
-  else
-  {
+  } else {
     yastl::merge_adaptive(first, middle, last, len1, len2, buf.begin(), buf.size(), comp);
   }
 }
 
 template <class BidirectionalIter, class Compared>
-void
-inplace_merge(BidirectionalIter first, BidirectionalIter middle,
-              BidirectionalIter last, Compared comp)
-{
-  if (first == middle || middle == last)
+void inplace_merge(BidirectionalIter first, BidirectionalIter middle, BidirectionalIter last, Compared comp) {
+  if (first == middle || middle == last) {
     return;
+  }
   yastl::inplace_merge_aux(first, middle, last, value_type(first), comp);
 }
 
@@ -1941,30 +1813,22 @@ inplace_merge(BidirectionalIter first, BidirectionalIter middle,
 // 对整个序列做部分排序，保证较小的 N 个元素以递增顺序置于[first, first + N)中
 /*****************************************************************************************/
 template <class RandomIter>
-void partial_sort(RandomIter first, RandomIter middle,
-                  RandomIter last)
-{
+void partial_sort(RandomIter first, RandomIter middle, RandomIter last) {
   yastl::make_heap(first, middle);
-  for (auto i = middle; i < last; ++i)
-  {
-    if (*i < *first)
-    {
+  for (auto i = middle; i < last; ++i) {
+    if (*i < *first) { // 如果后面有比根顶还小的元素，就把根顶弹出 (大顶堆)
       yastl::pop_heap_aux(first, middle, i, *i, distance_type(first));
     }
   }
-  yastl::sort_heap(first, middle);
+  yastl::sort_heap(first, middle); // 排序
 }
 
 // 重载版本使用函数对象 comp 代替比较操作
 template <class RandomIter, class Compared>
-void partial_sort(RandomIter first, RandomIter middle,
-                  RandomIter last, Compared comp)
-{
+void partial_sort(RandomIter first, RandomIter middle, RandomIter last, Compared comp) {
   yastl::make_heap(first, middle, comp);
-  for (auto i = middle; i < last; ++i)
-  {
-    if (comp(*i, *first))
-    {
+  for (auto i = middle; i < last; ++i) {
+    if (comp(*i, *first)) {
       yastl::pop_heap_aux(first, middle, i, *i, distance_type(first), comp);
     }
   }
@@ -1976,27 +1840,20 @@ void partial_sort(RandomIter first, RandomIter middle,
 // 行为与 partial_sort 类似，不同的是把排序结果复制到 result 容器中
 /*****************************************************************************************/
 template <class InputIter, class RandomIter, class Distance>
-RandomIter
-psort_copy_aux(InputIter first, InputIter last,
-               RandomIter result_first, RandomIter result_last,
-               Distance*)
-{
-  if (result_first == result_last)
+RandomIter psort_copy_aux(InputIter first, InputIter last, RandomIter result_first, RandomIter result_last, Distance*) {
+  if (result_first == result_last) {
     return result_last;
+  }
   auto result_iter = result_first;
-  while (first != last && result_iter != result_last)
-  {
+  while (first != last && result_iter != result_last) {
     *result_iter = *first;
     ++result_iter;
     ++first;
   }
   yastl::make_heap(result_first, result_iter);
-  while (first != last)
-  {
-    if (*first < *result_first)
-    {
-      yastl::adjust_heap(result_first, static_cast<Distance>(0),
-                           result_iter - result_first, *first);
+  while (first != last) {
+    if (*first < *result_first) {
+      yastl::adjust_heap(result_first, static_cast<Distance>(0), result_iter - result_first, *first);
     }
     ++first;
   }
@@ -2005,37 +1862,27 @@ psort_copy_aux(InputIter first, InputIter last,
 }
 
 template <class InputIter, class RandomIter>
-RandomIter
-partial_sort_copy(InputIter first, InputIter last,
-                  RandomIter result_first, RandomIter result_last)
-{
-  return yastl::psort_copy_aux(first, last, result_first, result_last,
-                               distance_type(result_first));
+RandomIter partial_sort_copy(InputIter first, InputIter last, RandomIter result_first, RandomIter result_last) {
+  return yastl::psort_copy_aux(first, last, result_first, result_last, distance_type(result_first));
 }
 
 // 重载版本使用函数对象 comp 代替比较操作
 template <class InputIter, class RandomIter, class Distance, class Compared>
-RandomIter
-psort_copy_aux(InputIter first, InputIter last,
-               RandomIter result_first, RandomIter result_last,
-               Distance*, Compared comp)
-{
-  if (result_first == result_last)
+RandomIter psort_copy_aux(InputIter first, InputIter last, RandomIter result_first, RandomIter result_last,
+                          Distance*, Compared comp) {
+  if (result_first == result_last) {
     return result_last;
+  }
   auto result_iter = result_first;
-  while (first != last && result_iter != result_last)
-  {
+  while (first != last && result_iter != result_last) {
     *result_iter = *first;
     ++result_iter;
     ++first;
   }
   yastl::make_heap(result_first, result_iter, comp);
-  while (first != last)
-  {
-    if (comp(*first, *result_first))
-    {
-      yastl::adjust_heap(result_first, static_cast<Distance>(0),
-                           result_iter - result_first, *first, comp);
+  while (first != last) {
+    if (comp(*first, *result_first)) {
+      yastl::adjust_heap(result_first, static_cast<Distance>(0), result_iter - result_first, *first, comp);
     }
     ++first;
   }
@@ -2044,13 +1891,9 @@ psort_copy_aux(InputIter first, InputIter last,
 }
 
 template <class InputIter, class RandomIter, class Compared>
-RandomIter
-partial_sort_copy(InputIter first, InputIter last,
-                  RandomIter result_first, RandomIter result_last,
-                  Compared comp)
-{
-  return yastl::psort_copy_aux(first, last, result_first, result_last,
-                               distance_type(result_first), comp);
+RandomIter partial_sort_copy(InputIter first, InputIter last, RandomIter result_first, RandomIter result_last,
+                             Compared comp) {
+  return yastl::psort_copy_aux(first, last, result_first, result_last, distance_type(result_first), comp);
 }
 /*****************************************************************************************/
 // partition
@@ -2058,25 +1901,21 @@ partial_sort_copy(InputIter first, InputIter last,
 // 该函数不保证元素的原始相对位置
 /*****************************************************************************************/
 template <class BidirectionalIter, class UnaryPredicate>
-BidirectionalIter
-partition(BidirectionalIter first, BidirectionalIter last,
-          UnaryPredicate unary_pred)
-{
-  while (true)
-  {
-    while (first != last && unary_pred(*first))
-    {
+BidirectionalIter partition(BidirectionalIter first, BidirectionalIter last, UnaryPredicate unary_pred) {
+  while (true) {
+    while (first != last && unary_pred(*first)) { // 从前面找一个不为 true 的
       ++first;
     }
-    if (first == last)
+    if (first == last) { // 终止条件
       break;
+    }
     --last;
-    while (first != last && !unary_pred(*last))
-    {
+    while (first != last && !unary_pred(*last)) { // 从后面找到一个 true 的
       --last;
     }
-    if (first == last)
+    if (first == last) { // 终止条件
       break;
+    }
     yastl::iter_swap(first, last);
     ++first;
   }
@@ -2089,19 +1928,13 @@ partition(BidirectionalIter first, BidirectionalIter last,
 // 其余放到 result_false 的输出区间，并返回一个 yastl::pair 指向这两个区间的尾部
 /*****************************************************************************************/
 template <class InputIter, class OutputIter1, class OutputIter2, class UnaryPredicate>
-yastl::pair<OutputIter1, OutputIter2>
-partition_copy(InputIter first, InputIter last,
-               OutputIter1 result_true, OutputIter2 result_false,
-               UnaryPredicate unary_pred)
-{
-  for (; first != last; ++first)
-  {
-    if (unary_pred(*first))
-    {
+yastl::pair<OutputIter1, OutputIter2> partition_copy(InputIter first, InputIter last,
+                                                     OutputIter1 result_true, OutputIter2 result_false,
+                                                     UnaryPredicate unary_pred) {
+  for (; first != last; ++first) {
+    if (unary_pred(*first)) {
       *result_true++ = *first;
-    }
-    else
-    {
+    } else {
       *result_false++ = *first;
     }
   }
@@ -2116,28 +1949,28 @@ constexpr static size_t kSmallSectionSize = 128;  // 小型区间的大小，在
 
                                                   // 用于控制分割恶化的情况
 template <class Size>
-Size slg2(Size n)
-{ // 找出 lgk <= n 的 k 的最大值
+Size slg2(Size n) { // 找出 lgk <= n 的 k 的最大值
   Size k = 0;
-  for (; n > 1; n >>= 1)
+  for (; n > 1; n >>= 1) {
     ++k;
+  }
   return k;
 }
 
-// 分割函数 unchecked_partition
+// 分割函数 unchecked_partition，让返回值 左侧 <= pivot，右侧 >= pivot
 template <class RandomIter, class T>
-RandomIter
-unchecked_partition(RandomIter first, RandomIter last, const T& pivot)
-{
-  while (true)
-  {
-    while (*first < pivot)
+RandomIter unchecked_partition(RandomIter first, RandomIter last, const T& pivot) {
+  while (true) {
+    while (*first < pivot) { // 找到一个 >= pivot 的
       ++first;
+    }
     --last;
-    while (pivot < *last)
+    while (pivot < *last) { // 找到一个 <= pivot 的
       --last;
-    if (!(first < last))
+    }
+    if (!(first < last)) { // last 倒退已经跨过 first 了 直接返回
       return first;
+    }
     yastl::iter_swap(first, last);
     ++first;
   }
@@ -2145,36 +1978,32 @@ unchecked_partition(RandomIter first, RandomIter last, const T& pivot)
 
 // 内省式排序，先进行 quick sort，当分割行为有恶化倾向时，改用 heap sort
 template <class RandomIter, class Size>
-void intro_sort(RandomIter first, RandomIter last, Size depth_limit)
-{
-  while (static_cast<size_t>(last - first) > kSmallSectionSize)
-  {
-    if (depth_limit == 0)
-    {                      // 到达最大分割深度限制
+void intro_sort(RandomIter first, RandomIter last, Size depth_limit) {
+  while (static_cast<size_t>(last - first) > kSmallSectionSize) {
+    if (depth_limit == 0) {
+      // 到达最大分割深度限制
       yastl::partial_sort(first, last, last);  // 改用 heap_sort
       return;
     }
     --depth_limit;
     auto mid = yastl::median(*(first), *(first + (last - first) / 2), *(last - 1));
-    auto cut = yastl::unchecked_partition(first, last, mid);
-    yastl::intro_sort(cut, last, depth_limit);
+    auto cut = yastl::unchecked_partition(first, last, mid); // 快排 分割左右两部分
+    yastl::intro_sort(cut, last, depth_limit); // 迭代排右侧
     last = cut;
   }
 }
 
 // 插入排序辅助函数 unchecked_linear_insert
 template <class RandomIter, class T>
-void unchecked_linear_insert(RandomIter last, const T& value)
-{
+void unchecked_linear_insert(RandomIter last, const T& value) {
   auto next = last;
   --next;
-  while (value < *next)
-  {
+  while (value < *next) { // 从后向前 值比 value 大就继续向前
     *last = *next;
-    last = next;
+    last = next; // 向前移动
     --next;
   }
-  *last = value;
+  *last = value; // next 值 <= value， next + 1 值赋值为value
 }
 
 // 插入排序函数 unchecked_insertion_sort
