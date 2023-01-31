@@ -1993,70 +1993,58 @@ void intro_sort(RandomIter first, RandomIter last, Size depth_limit) {
   }
 }
 
-// 插入排序辅助函数 unchecked_linear_insert
+// 插入排序辅助函数 unchecked_linear_insert，找到插入位置并插入 value(从小到大排序)
 template <class RandomIter, class T>
 void unchecked_linear_insert(RandomIter last, const T& value) {
   auto next = last;
   --next;
-  while (value < *next) { // 从后向前 值比 value 大就继续向前
-    *last = *next;
+  while (value < *next) { // 从后向前 值比 value 大就继续向前，直到找到合适的插入位置
+    *last = *next; // 所有元素往后串一个
     last = next; // 向前移动
     --next;
   }
   *last = value; // next 值 <= value， next + 1 值赋值为value
 }
 
-// 插入排序函数 unchecked_insertion_sort
+// 插入排序函数 unchecked_insertion_sort，将 [first, last) 范围内值依次插入
 template <class RandomIter>
-void unchecked_insertion_sort(RandomIter first, RandomIter last)
-{
-  for (auto i = first; i != last; ++i)
-  {
-    yastl::unchecked_linear_insert(i, *i);
+void unchecked_insertion_sort(RandomIter first, RandomIter last) {
+  for (auto i = first; i != last; ++i) {
+    yastl::unchecked_linear_insert(i, *i); // 依次插入
   }
 }
 
 // 插入排序函数 insertion_sort
 template <class RandomIter>
-void insertion_sort(RandomIter first, RandomIter last)
-{
-  if (first == last)
+void insertion_sort(RandomIter first, RandomIter last) {
+  if (first == last) { // 区间为空
     return;
-  for (auto i = first + 1; i != last; ++i)
-  {
+  }
+  for (auto i = first + 1; i != last; ++i) {
     auto value = *i;
-    if (value < *first)
-    {
-      yastl::copy_backward(first, i, i + 1);
+    if (value < *first) { // 比第一个元素还小
+      yastl::copy_backward(first, i, i + 1); // [first, i) 元素往后串一位
       *first = value;
-    }
-    else
-    {
-      yastl::unchecked_linear_insert(i, value);
+    } else { // 不是第一个，就找位置插入
+      yastl::unchecked_linear_insert(i, value); // i 为 插入的区间尾，i 不断向后增长
     }
   }
 }
 
 // 最终插入排序函数 final_insertion_sort
 template <class RandomIter>
-void final_insertion_sort(RandomIter first, RandomIter last)
-{
-  if (static_cast<size_t>(last - first) > kSmallSectionSize)
-  {
+void final_insertion_sort(RandomIter first, RandomIter last) {
+  if (static_cast<size_t>(last - first) > kSmallSectionSize) { // 大于阈值后 先排序一部分再插依次插入
     yastl::insertion_sort(first, first + kSmallSectionSize);
     yastl::unchecked_insertion_sort(first + kSmallSectionSize, last);
-  }
-  else
-  {
+  } else { // 区间大小小于阈值直接插入排序
     yastl::insertion_sort(first, last);
   }
 }
 
 template <class RandomIter>
-void sort(RandomIter first, RandomIter last)
-{
-  if (first != last)
-  {
+void sort(RandomIter first, RandomIter last) {
+  if (first != last) {
     // 内省式排序，将区间分为一个个小区间，然后对整体进行插入排序
     yastl::intro_sort(first, last, slg2(last - first) * 2);
     yastl::final_insertion_sort(first, last);
@@ -2064,21 +2052,20 @@ void sort(RandomIter first, RandomIter last)
 }
 
 // 重载版本使用函数对象 comp 代替比较操作
-// 分割函数 unchecked_partition
+// 分割函数 unchecked_partition, 以pivot为中轴，划分两边元素,返回值 first 左边 <=pivot，右边都 >=pivot
 template <class RandomIter, class T, class Compared>
-RandomIter
-unchecked_partition(RandomIter first, RandomIter last,
-                    const T& pivot, Compared comp)
-{
-  while (true)
-  {
-    while (comp(*first, pivot))
+RandomIter unchecked_partition(RandomIter first, RandomIter last, const T& pivot, Compared comp) {
+  while (true) {
+    while (comp(*first, pivot)) {
       ++first;
+    }
     --last;
-    while (comp(pivot, *last))
+    while (comp(pivot, *last)) {
       --last;
-    if (!(first < last))
+    }
+    if (!(first < last)) {
       return first;
+    }
     yastl::iter_swap(first, last);
     ++first;
   }
@@ -2086,32 +2073,26 @@ unchecked_partition(RandomIter first, RandomIter last,
 
 // 内省式排序，先进行 quick sort，当分割行为有恶化倾向时，改用 heap sort
 template <class RandomIter, class Size, class Compared>
-void intro_sort(RandomIter first, RandomIter last,
-                Size depth_limit, Compared comp)
-{
-  while (static_cast<size_t>(last - first) > kSmallSectionSize)
-  {
-    if (depth_limit == 0)
-    {                            // 到达最大分割深度限制
+void intro_sort(RandomIter first, RandomIter last, Size depth_limit, Compared comp) {
+  while (static_cast<size_t>(last - first) > kSmallSectionSize) {
+    if (depth_limit == 0) {                            // 到达最大分割深度限制
       yastl::partial_sort(first, last, last, comp);  // 改用 heap_sort
       return;
     }
     --depth_limit;
     auto mid = yastl::median(*(first), *(first + (last - first) / 2), *(last - 1));
     auto cut = yastl::unchecked_partition(first, last, mid, comp);
-    yastl::intro_sort(cut, last, depth_limit, comp);
+    yastl::intro_sort(cut, last, depth_limit, comp); // 快排
     last = cut;
   }
 }
 
-// 插入排序辅助函数 unchecked_linear_insert
+// 插入排序辅助函数 unchecked_linear_insert，带比较函数
 template <class RandomIter, class T, class Compared>
-void unchecked_linear_insert(RandomIter last, const T& value, Compared comp)
-{
+void unchecked_linear_insert(RandomIter last, const T& value, Compared comp) {
   auto next = last;
   --next;
-  while (comp(value, *next))
-  {  // 从尾部开始寻找第一个可插入位置
+  while (comp(value, *next)) {  // 从尾部开始寻找第一个可插入位置
     *last = *next;
     last = next;
     --next;
@@ -2121,31 +2102,24 @@ void unchecked_linear_insert(RandomIter last, const T& value, Compared comp)
 
 // 插入排序函数 unchecked_insertion_sort
 template <class RandomIter, class Compared>
-void unchecked_insertion_sort(RandomIter first, RandomIter last,
-                              Compared comp)
-{
-  for (auto i = first; i != last; ++i)
-  {
+void unchecked_insertion_sort(RandomIter first, RandomIter last, Compared comp) {
+  for (auto i = first; i != last; ++i) {
     yastl::unchecked_linear_insert(i, *i, comp);
   }
 }
 
-// 插入排序函数 insertion_sort
+// 插入排序函数 insertion_sort，带 comp 函数
 template <class RandomIter, class Compared>
-void insertion_sort(RandomIter first, RandomIter last, Compared comp)
-{
-  if (first == last)
+void insertion_sort(RandomIter first, RandomIter last, Compared comp) {
+  if (first == last) {
     return;
-  for (auto i = first + 1; i != last; ++i)
-  {
+  }
+  for (auto i = first + 1; i != last; ++i) {
     auto value = *i;
-    if (comp(value, *first))
-    {
+    if (comp(value, *first)) {
       yastl::copy_backward(first, i, i + 1);
       *first = value;
-    }
-    else
-    {
+    } else {
       yastl::unchecked_linear_insert(i, value, comp);
     }
   }
@@ -2153,24 +2127,18 @@ void insertion_sort(RandomIter first, RandomIter last, Compared comp)
 
 // 最终插入排序函数 final_insertion_sort
 template <class RandomIter, class Compared>
-void final_insertion_sort(RandomIter first, RandomIter last, Compared comp)
-{
-  if (static_cast<size_t>(last - first) > kSmallSectionSize)
-  {
+void final_insertion_sort(RandomIter first, RandomIter last, Compared comp) {
+  if (static_cast<size_t>(last - first) > kSmallSectionSize) {
     yastl::insertion_sort(first, first + kSmallSectionSize, comp);
     yastl::unchecked_insertion_sort(first + kSmallSectionSize, last, comp);
-  }
-  else
-  {
+  } else {
     yastl::insertion_sort(first, last, comp);
   }
 }
 
 template <class RandomIter, class Compared>
-void sort(RandomIter first, RandomIter last, Compared comp)
-{
-  if (first != last)
-  {
+void sort(RandomIter first, RandomIter last, Compared comp) {
+  if (first != last) {
     // 内省式排序，将区间分为一个个小区间，然后对整体进行插入排序
     yastl::intro_sort(first, last, slg2(last - first) * 2, comp);
     yastl::final_insertion_sort(first, last, comp);
@@ -2182,40 +2150,36 @@ void sort(RandomIter first, RandomIter last, Compared comp)
 // 对序列重排，使得所有小于第 n 个元素的元素出现在它的前面，大于它的出现在它的后面
 /*****************************************************************************************/
 template <class RandomIter>
-void nth_element(RandomIter first, RandomIter nth,
-                 RandomIter last)
-{
-  if (nth == last)
+void nth_element(RandomIter first, RandomIter nth, RandomIter last) {
+  if (nth == last) {
     return;
-  while (last - first > 3)
-  {
-    auto cut = yastl::unchecked_partition(first, last, yastl::median(*first,
-										  *(first + (last - first) / 2),
-										  *(last - 1)));
-    if (cut <= nth)  // 如果 nth 位于右段
+  }
+  while (last - first > 3) { // 直到区间 <=3 够小了之后再排序
+    auto cut = yastl::unchecked_partition(first, last, yastl::median(*first, *(first + (last - first) / 2),
+                                                                     *(last - 1))); // 三分取中间值
+    if (cut <= nth) { // 如果 nth 位于右段
       first = cut;   // 对右段进行分割
-    else
+    } else {
       last = cut;    // 对左段进行分割
+    }
   }
   yastl::insertion_sort(first, last);
 }
 
 // 重载版本使用函数对象 comp 代替比较操作
 template <class RandomIter, class Compared>
-void nth_element(RandomIter first, RandomIter nth,
-                 RandomIter last, Compared comp)
-{
-  if (nth == last)
+void nth_element(RandomIter first, RandomIter nth, RandomIter last, Compared comp) {
+  if (nth == last) {
     return;
-  while (last - first > 3)
-  {
-    auto cut = yastl::unchecked_partition(first, last, yastl::median(*first, 
-										  *(first + (last - first) / 2),
-										  *(last - 1)), comp);
-    if (cut <= nth)  // 如果 nth 位于右段
+  }
+  while (last - first > 3) {
+    auto cut = yastl::unchecked_partition(first, last, yastl::median(*first, *(first + (last - first) / 2),
+										                                                 *(last - 1)), comp);
+    if (cut <= nth) { // 如果 nth 位于右段
       first = cut;   // 对右段进行分割
-    else
+    } else {
       last = cut;    // 对左段进行分割
+    }
   }
   yastl::insertion_sort(first, last, comp);
 }
@@ -2226,15 +2190,12 @@ void nth_element(RandomIter first, RandomIter nth,
 /*****************************************************************************************/
 // unique_copy_dispatch 的 forward_iterator_tag 版本
 template <class InputIter, class ForwardIter>
-ForwardIter
-unique_copy_dispatch(InputIter first, InputIter last,
-                     ForwardIter result, forward_iterator_tag)
-{
+ForwardIter unique_copy_dispatch(InputIter first, InputIter last, ForwardIter result, forward_iterator_tag) {
   *result = *first;
-  while (++first != last)
-  {
-    if (*result != *first)
+  while (++first != last) {
+    if (*result != *first) {
       *++result = *first;
+    }
   }
   return ++result;
 }
@@ -2242,44 +2203,36 @@ unique_copy_dispatch(InputIter first, InputIter last,
 // unique_copy_dispatch 的 output_iterator_tag 版本
 // 由于 output iterator 只能进行只读操作，所以不能有 *result != *first 这样的判断
 template <class InputIter, class OutputIter>
-OutputIter
-unique_copy_dispatch(InputIter first, InputIter last,
-                     OutputIter result, output_iterator_tag)
-{
+OutputIter unique_copy_dispatch(InputIter first, InputIter last, OutputIter result, output_iterator_tag) {
   auto value = *first;
-  *result = value;
-  while (++first != last)
-  {
-    if (value != *first)
-    {
+  *result = value; // 只能写 不能读，用 value 来代替对 result 的读
+  while (++first != last) {
+    if (value != *first) {
       value = *first;
-      *++result = value;
+      *++result = value; // result 迭代器只能写 不能读
     }
   }
   return ++result;
 }
 
 template <class InputIter, class OutputIter>
-OutputIter
-unique_copy(InputIter first, InputIter last, OutputIter result)
-{
-  if (first == last)
+OutputIter unique_copy(InputIter first, InputIter last, OutputIter result) {
+  if (first == last) {
     return result;
+  }
   return yastl::unique_copy_dispatch(first, last, result, iterator_category(result));
 }
 
 // 重载版本使用函数对象 comp 代替比较操作
 // unique_copy_dispatch 的 forward_iterator_tag 版本
 template <class InputIter, class ForwardIter, class Compared>
-ForwardIter
-unique_copy_dispatch(InputIter first, InputIter last,
-                     ForwardIter result, forward_iterator_tag, Compared comp)
-{
+ForwardIter unique_copy_dispatch(InputIter first, InputIter last, ForwardIter result, forward_iterator_tag,
+                                 Compared comp) {
   *result = *first;
-  while (++first != last)
-  {
-    if (!comp(*result, *first))
+  while (++first != last) {
+    if (!comp(*result, *first)) {
       *++result = *first;
+    }
   }
   return ++result;
 }
@@ -2287,16 +2240,12 @@ unique_copy_dispatch(InputIter first, InputIter last,
 // unique_copy_dispatch 的 output_iterator_tag 版本
 // 由于 output iterator 只能进行只读操作，所以不能有 *result != *first 这样的判断
 template <class InputIter, class OutputIter, class Compared>
-OutputIter
-unique_copy_dispatch(InputIter first, InputIter last,
-                     OutputIter result, output_iterator_tag, Compared comp)
-{
+OutputIter unique_copy_dispatch(InputIter first, InputIter last, OutputIter result, output_iterator_tag,
+                                Compared comp) {
   auto value = *first;
   *result = value;
-  while (++first != last)
-  {
-    if (!comp(value, *first))
-    {
+  while (++first != last) {
+    if (!comp(value, *first)) {
       value = *first;
       *++result = value;
     }
@@ -2305,11 +2254,10 @@ unique_copy_dispatch(InputIter first, InputIter last,
 }
 
 template <class InputIter, class OutputIter, class Compared>
-OutputIter
-unique_copy(InputIter first, InputIter last, OutputIter result, Compared comp)
-{
-  if (first == last)
+OutputIter unique_copy(InputIter first, InputIter last, OutputIter result, Compared comp) {
+  if (first == last) {
     return result;
+  }
   return yastl::unique_copy_dispatch(first, last, result, iterator_category(result), comp);
 }
 
@@ -2318,16 +2266,14 @@ unique_copy(InputIter first, InputIter last, OutputIter result, Compared comp)
 // 移除[first, last)内重复的元素，序列必须有序，和 remove 类似，它也不能真正的删除重复元素
 /*****************************************************************************************/
 template <class ForwardIter>
-ForwardIter unique(ForwardIter first, ForwardIter last)
-{
-  first = yastl::adjacent_find(first, last);
+ForwardIter unique(ForwardIter first, ForwardIter last) {
+  first = yastl::adjacent_find(first, last); // 找出第一对相等的元素，提高效率
   return yastl::unique_copy(first, last, first);
 }
 
 // 重载版本使用函数对象 comp 代替比较操作
 template <class ForwardIter, class Compared>
-ForwardIter unique(ForwardIter first, ForwardIter last, Compared comp)
-{
+ForwardIter unique(ForwardIter first, ForwardIter last, Compared comp) {
   first = yastl::adjacent_find(first, last, comp);
   return yastl::unique_copy(first, last, first, comp);
 }

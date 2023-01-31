@@ -6,7 +6,7 @@ Yet another STL for learning.
 #### 阅读进度
 .
 ├── algobase.h          常用算法实现文件                            100%
-├── algo.h              算法实现文件                                 40%
+├── algo.h              算法实现文件                                100%
 ├── allocator.h         分配器文件，预先定义的接口                   100%
 ├── construct.h         对象的构造和析构                            100%
 ├── exceptdef.h         调试宏文件                                  100%
